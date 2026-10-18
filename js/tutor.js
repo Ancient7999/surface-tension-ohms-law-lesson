@@ -30,6 +30,7 @@
   function spotRect() { if (!spotT) return null; if (spotT.box) return boxRect(spotT.box); const e = spotT.el || spotT.ring; return e.isConnected ? e.getBoundingClientRect() : null; }
   function rectOf(t) { if (!t) return null; if (t.svg) return boxRect(t); return t.getBoundingClientRect(); }
   const BAR_H = () => (bar.hidden ? 0 : bar.offsetHeight + 16);
+  if (window.ResizeObserver) new ResizeObserver(() => document.documentElement.style.setProperty('--dock-h', (bar.hidden ? 0 : bar.offsetHeight + 16) + 'px')).observe(bar);
   function placeNear(node, r, prefer) {
     const w = node.offsetWidth, h = node.offsetHeight, vw = document.documentElement.clientWidth, vh = window.innerHeight - BAR_H();
     const x = clamp(r.left + r.width / 2 - w / 2, 8, Math.max(8, vw - w - 8));
@@ -174,7 +175,23 @@
   function step(title, text, f) { navStep(); tTitle.textContent = title; tText.textContent = text; tF.innerHTML = f || ''; }
   const words = s => (String(s || '').replace(/<[^>]+>/g, ' ').match(/\S+/g) || []).length;
   const rt = (...s) => 2500 + 60 * s.reduce((a, x) => a + words(x), 0);
-  function availRect() { return [70, window.innerHeight - BAR_H() - 8]; }
+  /* the visible band between the sticky header (top bar, plus the section row on narrow screens) and the floating dock */
+  function availRect() {
+    let top = 0;
+    const tb = document.querySelector('.topbar'); if (tb) top = Math.max(top, tb.getBoundingClientRect().bottom);
+    const rail = document.getElementById('rail-nav');
+    if (rail && getComputedStyle(rail).position === 'sticky') top = Math.max(top, rail.getBoundingClientRect().bottom);
+    return [top + 8, window.innerHeight - BAR_H() - 8];
+  }
+  /* how much of a rect lies inside the visible band (0..1) */
+  function visFrac(r) { if (!r || r.height <= 0) return 0; const [a0, a1] = availRect(); const vis = Math.max(0, Math.min(r.bottom, a1) - Math.max(r.top, a0)); return vis / r.height; }
+  function unionOf(rs) { rs = rs.filter(Boolean); if (!rs.length) return null; const t = Math.min(...rs.map(r => r.top)), b = Math.max(...rs.map(r => r.bottom)); return { top: t, bottom: b, height: b - t }; }
+  /* show a set of focus targets: all of them if they fit, otherwise the first (the apparatus), which is where the result happens */
+  async function show(focus) {
+    const rs = focus.map(rectOf).filter(Boolean); if (!rs.length) return;
+    const [a0, a1] = availRect(), u = unionOf(rs);
+    await bringIn(u.height <= a1 - a0 ? u : rs[0]);
+  }
   async function bringIn(r) {
     if (!r) return;
     const [a0, a1] = availRect();
@@ -189,8 +206,18 @@
     traceHide();
     if (o.trace && !o.keepText) { const n = o.trace, inf = o.info || infoFor(n); title = plain(o.info ? inf.title : n.classList.contains('num') ? `${n.textContent.trim()} = ${inf.nm}` : inf.title); text = plain(inf.where); }
     step(title, text, o.f);
-    const t = o.box || o.el;
-    if (t) { await bringIn(rectOf(t)); spot(t, o.label); } else spot(null);
+    let t = o.box || o.el;
+    if (!o.focus && t) { /* anything on or inside an apparatus frame brings the whole apparatus into view */
+      const node = t.svg || t, fr = node.closest && node.closest('.rig-frame');
+      if (fr && fr !== t) o.focus = [fr];
+    }
+    if (o.focus) {
+      const f = o.focus.filter(Boolean);
+      await show(t && !f.includes(t) ? f.concat([t]) : f);
+      if (t && visFrac(rectOf(t)) < .99 && o.alt) t = o.alt; /* the control is off-screen: point at the part of the apparatus it acts on */
+      spot(t, o.label);
+    } else if (t) { await bringIn(rectOf(t)); spot(t, o.label); } else spot(null);
+    logStep(title, o.focus || (t ? [t] : []), t);
     if (o.trace) {
       const n = o.trace, inf = o.info || infoFor(n), s = inf && inf.src ? inf.src() : null;
       const nr = n.getBoundingClientRect();
@@ -200,6 +227,9 @@
     }
     await wait(o.ms != null ? o.ms : rt(title, text, o.f));
   }
+  /* step log for checks: how much of each focus target and of the spotlight target is in view when the step starts */
+  tut.log = [];
+  function logStep(title, focus, t) { tut.log.push({ idx: tut.idx, title, focus: focus.map(f => +visFrac(rectOf(f)).toFixed(3)), spot: t ? +visFrac(rectOf(t)).toFixed(3) : null }); }
   async function traceLine(w) {
     const seen = new Set();
     for (const n of w.querySelectorAll('.num')) { const k = n.dataset.ref; if (seen.has(k)) continue; seen.add(k); await teach('', '', { trace: n }); }
@@ -258,12 +288,13 @@
   function stop() { if (!tut.on) return; tut.restartTo = null; tut.cancel = true; tut.gen++; }
   $('tut-stop').addEventListener('click', stop);
 
-  const T = { teach, step, wait, spot, tween, ease, traceLine, typeInto, bringIn, say, rt, STOP, rectOf, get skip() { return tut.skip; } };
+  const T = { teach, step, wait, spot, tween, ease, traceLine, typeInto, bringIn, show, visFrac, say, rt, STOP, rectOf, get skip() { return tut.skip; } };
   async function run(lab, target) {
     const cfg = LABS[lab];
     tut.on = true; tut.cancel = false; tut.lab = lab; navBegin(target, cfg.scope);
     document.body.classList.add('tut-on'); bar.hidden = false; Object.values(LABS).forEach(c => { c.btn.disabled = true; });
     try {
+      if (target === undefined) tut.log = [];
       cfg.reset(); cfg.seed();
       await cfg.run(T);
     } catch (e) {

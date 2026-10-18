@@ -6,7 +6,6 @@
   const svg = $('st-rig'); defs(svg, 'sr');
   const G = 980;
   const SURF = 380, PX = 34, TX = 330, TLEN = 300, UP = 318, DOWN = 432, Z = 6, LX = 760, LY = 262, LR = 150, CX = 341;
-  const FILL = { water: C.aqua, soap: '#5aa9c9', ethanol: '#8fc6dc' };
   const DEFAULT_MSG = 'First rinse the capillary with the liquid, then dip it: drag it down into the beaker or press Dip.';
   const st = { liq: 'water', r: 0.05, rinsed: false, bottom: UP, dipped: false, settled: false, col: 0, hDip: NaN, fresh: false, reads: [], rng: Math.random, forced: null, busy: false, dips: 0 };
   const lq = () => LIQ[st.liq];
@@ -14,75 +13,169 @@
   const bw = () => Math.max(1.1, st.r * PX);
   const r2 = v => Math.round(v * 100) / 100;
 
-  /* ---------- drawing ---------- */
-  el('rect', { x: 0, y: 560, width: 1000, height: 60, fill: 'url(#sr-bench)' }, svg);
-  el('line', { x1: 0, y1: 560, x2: 1000, y2: 560, stroke: C.line2 }, svg);
-  el('rect', { x: 36, y: 544, width: 170, height: 16, rx: 3, fill: C.slate2 }, svg);
-  el('rect', { x: 66, y: 70, width: 9, height: 476, rx: 3, fill: 'url(#sr-steel)', stroke: '#8f98a3', 'stroke-width': .8 }, svg);
+  /* ---------- drawing: bench, retort stand, beaker, capillary, printed scale, magnifier, wash bottle ---------- */
+  const V = n => `var(--${n})`, raw = L.raw;
+  const bk = { x: 180, y: 300, w: 300, h: 250 }, BW = 5;       /* beaker outline and glass wall thickness */
+  const RTOP = SURF - 7.3 * PX - 8, RBOT = SURF + 4;            /* printed scale extent */
+  /* bench surface, grain and soft contact shadows */
+  el('rect', { x: 0, y: 552, width: 1000, height: 68, fill: 'url(#sr-bench)' }, svg);
+  el('rect', { x: 0, y: 552, width: 1000, height: 68, fill: 'url(#sr-grain)', opacity: .55 }, svg);
+  el('line', { x1: 0, y1: 552.5, x2: 1000, y2: 552.5, stroke: V('rg-glass-hi'), 'stroke-opacity': .7, style: 'stroke-opacity:calc(.7 - var(--rg-cast) * .9)' }, svg);
+  const cast = (cx, rx, op) => el('ellipse', { cx, cy: 555, rx, ry: 6, fill: raw('#06100d'), opacity: op, filter: 'url(#sr-blur)', style: 'opacity:calc(var(--rg-cast) * ' + op * 2.4 + ')' }, svg);
+  cast(98, 80, .35); cast(bk.x + bk.w / 2, bk.w / 2 + 14, .4); cast(578, 44, .35);
+  /* retort stand: weighted cast base, chrome rod */
+  const stand = el('g', null, svg);
+  el('path', { d: 'M24 552 L34 533 Q36 529 42 529 L156 529 Q162 529 164 533 L172 552 Z', fill: 'url(#sr-iron)' }, stand);
+  el('path', { d: 'M34 533 Q36 529 42 529 L156 529 Q162 529 164 533', fill: 'none', stroke: V('rg-iron-hi'), 'stroke-width': 1.4 }, stand);
+  el('rect', { x: 24, y: 549, width: 148, height: 3, fill: raw('#0b0f0e'), opacity: .5 }, stand);
+  [44, 150].forEach(x => el('rect', { x: x - 7, y: 551, width: 14, height: 3, rx: 1.5, fill: V('rg-rubber') }, stand));
+  el('rect', { x: 50, y: 520, width: 40, height: 10, rx: 2, fill: 'url(#sr-iron)' }, stand);
+  el('rect', { x: 64, y: 46, width: 12, height: 478, rx: 5, fill: 'url(#sr-steel)' }, stand);
+  el('rect', { x: 66.5, y: 48, width: 2, height: 470, fill: V('rg-glass-hi'), opacity: .6 }, stand);
+  el('ellipse', { cx: 70, cy: 47, rx: 6, ry: 2.2, fill: V('rg-steel-1') }, stand);
+  /* a boss head on the rod: block, knurled thumbscrew */
+  function boss(g, y) {
+    el('rect', { x: 52, y: y - 12, width: 36, height: 26, rx: 4, fill: 'url(#sr-iron)', filter: 'url(#sr-sh2)' }, g);
+    el('rect', { x: 52, y: y - 12, width: 36, height: 3, rx: 1.5, fill: V('rg-iron-hi'), opacity: .8 }, g);
+    el('rect', { x: 38, y: y - 6, width: 14, height: 14, rx: 2, fill: 'url(#sr-steelv)' }, g);
+    el('rect', { x: 38, y: y - 6, width: 14, height: 14, rx: 2, fill: 'url(#sr-knurl)' }, g);
+    el('rect', { x: 32, y: y - 9, width: 7, height: 20, rx: 2, fill: 'url(#sr-steelv)', stroke: V('rg-steel-4'), 'stroke-width': .6 }, g);
+  }
+  /* the scale's own arm and boss */
+  const sArm = el('g', null, svg);
+  el('rect', { x: 80, y: RTOP + 14, width: CX - 82, height: 7, rx: 3.5, fill: 'url(#sr-steelv)' }, sArm);
+  boss(sArm, RTOP + 17);
   const scene = el('g', { id: 'sr-scene' }, svg);
-  const bk = { x: 180, y: 300, w: 300, h: 250 };
-  el('path', { d: `M${bk.x} ${bk.y} L${bk.x} ${bk.y + bk.h - 12} Q${bk.x} ${bk.y + bk.h} ${bk.x + 12} ${bk.y + bk.h} L${bk.x + bk.w - 12} ${bk.y + bk.h} Q${bk.x + bk.w} ${bk.y + bk.h} ${bk.x + bk.w} ${bk.y + bk.h - 12} L${bk.x + bk.w} ${bk.y}`, fill: 'rgba(230,242,247,.35)', stroke: 'none' }, scene);
-  const water = el('rect', { x: bk.x + 2, y: SURF, width: bk.w - 4, height: bk.y + bk.h - SURF - 2, rx: 10, fill: FILL.water, opacity: .55 }, scene);
-  el('line', { x1: bk.x + 2, y1: SURF, x2: bk.x + bk.w - 2, y2: SURF, stroke: C.aqua2, 'stroke-width': 1.2, opacity: .8 }, scene);
-  /* centimetre scale beside the tube, zero level with the liquid surface */
+  /* beaker: back rim and inner back wall */
+  const ix0 = bk.x + BW, ix1 = bk.x + bk.w - BW, bot = bk.y + bk.h;
+  el('path', { d: `M${bk.x} ${bk.y} L${bk.x} ${bot - 16} Q${bk.x} ${bot} ${bk.x + 16} ${bot} L${bk.x + bk.w - 16} ${bot} Q${bk.x + bk.w} ${bot} ${bk.x + bk.w} ${bot - 16} L${bk.x + bk.w} ${bk.y} Z`, fill: V('rg-glass-tint'), opacity: .22 }, scene);
+  el('path', { d: `M${bk.x - 3} ${bk.y} A ${bk.w / 2 + 3} 7 0 0 1 ${bk.x + bk.w + 3} ${bk.y}`, fill: 'none', stroke: V('rg-glass-edge'), 'stroke-width': 1.2, opacity: .55 }, scene);
+  /* liquid body with a concave surface meeting the walls */
+  const liqPath = `M${ix0} ${SURF - 5} Q${ix0 + 2} ${SURF} ${ix0 + 12} ${SURF} L${ix1 - 12} ${SURF} Q${ix1 - 2} ${SURF} ${ix1} ${SURF - 5} L${ix1} ${bot - 18} Q${ix1} ${bot - BW} ${ix1 - 14} ${bot - BW} L${ix0 + 14} ${bot - BW} Q${ix0} ${bot - BW} ${ix0} ${bot - 18} Z`;
+  const liqG = el('g', null, scene);
+  const water = el('path', { d: liqPath, fill: 'url(#sr-water)' }, liqG);
+  el('ellipse', { cx: (ix0 + ix1) / 2, cy: SURF, rx: (ix1 - ix0) / 2 - 6, ry: 5.5, fill: 'url(#sr-surface)', opacity: .9 }, liqG);
+  el('path', { d: `M${ix0} ${SURF - 5} Q${ix0 + 2} ${SURF} ${ix0 + 12} ${SURF} L${ix1 - 12} ${SURF} Q${ix1 - 2} ${SURF} ${ix1} ${SURF - 5}`, fill: 'none', stroke: V('rg-water-line'), 'stroke-width': 1.1, opacity: .85 }, liqG);
+  /* printed centimetre scale beside the tube: zero level with the surface */
   const ruler = el('g', null, scene);
-  el('rect', { x: CX - 4, y: SURF - 7.3 * PX, width: 24, height: 7.3 * PX + 12, fill: '#fffdf6', stroke: '#c9c1a8', 'stroke-width': .6 }, ruler);
+  el('rect', { x: CX - 4, y: RTOP, width: 27, height: RBOT - RTOP, rx: 2, fill: 'url(#sr-ivory)', filter: 'url(#sr-sh2)' }, ruler);
+  el('rect', { x: CX - 4, y: RTOP, width: 27, height: RBOT - RTOP, rx: 2, fill: 'url(#sr-grain)', opacity: .35 }, ruler);
+  el('rect', { x: CX + 21.6, y: RTOP, width: 1.4, height: RBOT - RTOP, fill: V('rg-ivory-2') }, ruler);
   for (let k = 0; k <= 140; k++) {
     const y = SURF - k * 0.05 * PX, len = k % 20 === 0 ? 9 : k % 10 === 0 ? 7 : k % 2 === 0 ? 4.5 : 2.6;
-    el('line', { x1: CX - 4, y1: y, x2: CX - 4 + len, y2: y, stroke: '#2a2f3a', 'stroke-width': k % 2 === 0 ? .42 : .3 }, ruler);
-    if (k % 20 === 0) txt(ruler, CX + 13, y + 2.2, String(k / 20), { 'font-size': 6.4, 'font-family': F_BODY, fill: '#2a2f3a', 'text-anchor': 'middle', 'font-weight': 600 });
+    el('line', { x1: CX - 4, y1: y, x2: CX - 4 + len, y2: y, stroke: k === 0 ? V('rg-print-red') : V('rg-print'), 'stroke-width': k % 20 === 0 ? .5 : k % 2 === 0 ? .4 : .28 }, ruler);
+    if (k % 20 === 0) txt(ruler, CX + 13.5, y + 2.3, String(k / 20), { 'font-size': 6.6, 'font-family': F_HEAD, fill: k === 0 ? V('rg-print-red') : V('rg-print'), 'text-anchor': 'middle', 'font-weight': 700 });
   }
-  txt(ruler, CX + 8, SURF - 7.3 * PX - 4, 'cm', { 'font-size': 7, 'font-family': F_BODY, fill: C.muted, 'text-anchor': 'middle' });
-  const colPath = el('path', { d: '', fill: FILL.water, opacity: .85 }, scene);
-  const menPath = el('path', { d: '', fill: 'none', stroke: C.aqua2, 'stroke-width': .5 }, scene);
+  txt(ruler, CX + 9.5, RTOP + 6.5, 'cm', { 'font-size': 4.6, 'font-family': F_BODY, fill: V('rg-print'), 'text-anchor': 'middle', 'font-weight': 600, opacity: .8 });
+  /* capillary: everything above the surface is drawn as is; below it a copy is shifted by refraction */
   const tubeG = el('g', { class: 'drag kfocus', tabindex: 0, role: 'slider', 'aria-label': 'Capillary tube: arrow down dips it, arrow up lifts it out', 'aria-valuemin': 0, 'aria-valuemax': 1, 'aria-valuenow': 0 }, scene);
-  const tubeRect = el('rect', { x: 0, y: 0, width: 0, height: TLEN, rx: 1.5, fill: 'url(#sr-glass)', stroke: '#8fb4c4', 'stroke-width': .8 }, tubeG);
-  const boreL = el('line', { stroke: '#a9cbd8', 'stroke-width': .5 }, tubeG), boreR = el('line', { stroke: '#a9cbd8', 'stroke-width': .5 }, tubeG);
+  const dfs = svg.querySelector('defs');
+  const cpA = el('clipPath', { id: 'sr-above', clipPathUnits: 'userSpaceOnUse' }, dfs); el('rect', { x: 0, y: -400, width: 1000, height: SURF + 400 }, cpA);
+  const cpB = el('clipPath', { id: 'sr-below', clipPathUnits: 'userSpaceOnUse' }, dfs); el('rect', { x: ix0, y: SURF, width: ix1 - ix0, height: bot - SURF }, cpB);
+  const hit = el('rect', { x: 0, y: 0, width: 0, height: TLEN, fill: 'transparent' }, tubeG);
+  const tubeAbove = el('g', { 'clip-path': 'url(#sr-above)' }, tubeG);
+  const tubeVis = el('g', { id: 'sr-tubevis' }, tubeAbove);
+  const tubeRect = el('rect', { x: 0, y: 0, width: 0, height: TLEN, rx: 2.2, fill: 'url(#sr-glass)', stroke: V('rg-glass-edge'), 'stroke-width': .7, 'stroke-opacity': .9 }, tubeVis);
+  const boreFill = el('rect', { x: 0, y: 0, width: 0, height: TLEN, fill: V('rg-glass-tint'), opacity: .35 }, tubeVis);
+  const boreL = el('line', { stroke: V('rg-glass-edge'), 'stroke-width': .55, opacity: .9 }, tubeVis), boreR = el('line', { stroke: V('rg-glass-edge'), 'stroke-width': .55, opacity: .9 }, tubeVis);
+  const colPath = el('path', { d: '', fill: 'url(#sr-waterCol)' }, tubeVis);
+  const menPath = el('path', { d: '', fill: 'none', stroke: V('rg-water-line'), 'stroke-width': .6 }, tubeVis);
+  const menHi = el('path', { d: '', fill: 'none', stroke: V('rg-glass-hi'), 'stroke-width': .45, opacity: .9 }, tubeVis);
+  const tubeHi = el('rect', { x: 0, y: 0, width: 1.1, height: TLEN - 6, rx: .5, fill: V('rg-glass-hi'), opacity: .85 }, tubeVis);
+  const tubeTop = el('ellipse', { cx: TX, cy: 0, rx: 0, ry: 1.6, fill: V('rg-glass-tint'), stroke: V('rg-glass-edge'), 'stroke-width': .6 }, tubeVis);
+  el('use', { href: '#sr-tubevis', transform: 'translate(2.6 0)', 'clip-path': 'url(#sr-below)' }, tubeG);
   const rinseDrops = el('g', null, tubeG);
-  const ringT = el('rect', { x: 0, y: 0, width: 0, height: TLEN + 8, rx: 5, fill: 'none', stroke: C.acc, 'stroke-width': 2, opacity: 0 }, tubeG);
+  const ringT = el('rect', { x: 0, y: 0, width: 0, height: TLEN + 8, rx: 6, fill: 'none', stroke: C.acc, 'stroke-width': 2, opacity: 0 }, tubeG);
   tubeG.addEventListener('focus', () => { if (tubeG.matches(':focus-visible')) ringT.setAttribute('opacity', 1); }); tubeG.addEventListener('blur', () => ringT.setAttribute('opacity', 0));
+  /* clamp on the tube: arm, boss on the rod, jaw with cork pads and a front strap */
   const clamp_ = el('g', null, tubeG);
-  const arm = el('rect', { x: 75, y: 0, width: 0, height: 9, rx: 2, fill: C.slate }, clamp_);
-  const boss = el('rect', { x: 58, y: 0, width: 26, height: 22, rx: 4, fill: C.slate2 }, clamp_);
-  const jaw = el('rect', { x: 0, y: 0, width: 0, height: 26, rx: 4, fill: C.acc }, clamp_);
-  el('path', { d: `M${bk.x} ${bk.y} L${bk.x} ${bk.y + bk.h - 12} Q${bk.x} ${bk.y + bk.h} ${bk.x + 12} ${bk.y + bk.h} L${bk.x + bk.w - 12} ${bk.y + bk.h} Q${bk.x + bk.w} ${bk.y + bk.h} ${bk.x + bk.w} ${bk.y + bk.h - 12} L${bk.x + bk.w} ${bk.y}`, fill: 'none', stroke: '#8fb4c4', 'stroke-width': 3.5, 'stroke-linejoin': 'round' }, scene);
-  el('rect', { x: bk.x + 10, y: bk.y + 16, width: 7, height: bk.h - 50, rx: 3.5, fill: '#fff', opacity: .6 }, scene);
-  const liqLab = T(svg, bk.x + bk.w / 2 + 70, 520, 'water', { 'text-anchor': 'middle', 'font-size': 16, fill: C.aqua2, 'font-weight': 600 });
+  const arm = el('rect', { x: 80, y: 0, width: 0, height: 7, rx: 3.5, fill: 'url(#sr-steelv)' }, clamp_);
+  const bossG = el('g', null, clamp_);
+  const jawG = el('g', null, clamp_);
+  /* submerged part of everything is seen through the liquid */
+  el('path', { d: liqPath, fill: 'url(#sr-water)', opacity: .32, 'pointer-events': 'none' }, scene);
+  /* beaker front: thick walls, base, rim lip, spout, specular streaks, printed graduations */
+  const front = el('g', { 'pointer-events': 'none' }, scene);
+  el('path', { d: `M${bk.x} ${bk.y - 2} L${bk.x} ${bot - 16} Q${bk.x} ${bot} ${bk.x + 16} ${bot} L${bk.x + bk.w - 16} ${bot} Q${bk.x + bk.w} ${bot} ${bk.x + bk.w} ${bot - 16} L${bk.x + bk.w} ${bk.y - 2} L${ix1} ${bk.y - 2} L${ix1} ${bot - 18} Q${ix1} ${bot - BW} ${ix1 - 14} ${bot - BW} L${ix0 + 14} ${bot - BW} Q${ix0} ${bot - BW} ${ix0} ${bot - 18} L${ix0} ${bk.y - 2} Z`, fill: 'url(#sr-glassWall)', 'fill-rule': 'evenodd', opacity: .9 }, front);
+  el('path', { d: `M${bk.x} ${bk.y} L${bk.x} ${bot - 16} Q${bk.x} ${bot} ${bk.x + 16} ${bot} L${bk.x + bk.w - 16} ${bot} Q${bk.x + bk.w} ${bot} ${bk.x + bk.w} ${bot - 16} L${bk.x + bk.w} ${bk.y}`, fill: 'none', stroke: V('rg-glass-edge'), 'stroke-width': 1.3, 'stroke-linejoin': 'round' }, front);
+  el('path', { d: `M${ix0} ${bk.y} L${ix0} ${bot - 18} Q${ix0} ${bot - BW} ${ix0 + 14} ${bot - BW} L${ix1 - 14} ${bot - BW} Q${ix1} ${bot - BW} ${ix1} ${bot - 18} L${ix1} ${bk.y}`, fill: 'none', stroke: V('rg-glass-edge'), 'stroke-width': .6, opacity: .6 }, front);
+  el('path', { d: `M${bk.x - 4} ${bk.y - 1} A ${bk.w / 2 + 4} 7 0 0 0 ${bk.x + bk.w + 4} ${bk.y - 1}`, fill: 'none', stroke: V('rg-glass-hi'), 'stroke-width': 3, opacity: .9 }, front);
+  el('path', { d: `M${bk.x - 4} ${bk.y - 1} A ${bk.w / 2 + 4} 7 0 0 0 ${bk.x + bk.w + 4} ${bk.y - 1}`, fill: 'none', stroke: V('rg-glass-edge'), 'stroke-width': 1, opacity: .8 }, front);
+  el('path', { d: `M${bk.x - 4} ${bk.y - 1} q -9 -3 -12 -9 q 6 1 12 4`, fill: V('rg-glass-tint'), stroke: V('rg-glass-edge'), 'stroke-width': 1, opacity: .9 }, front);
+  el('rect', { x: bk.x + 9, y: bk.y + 14, width: 6, height: bk.h - 46, rx: 3, fill: 'url(#sr-streak)' }, front);
+  el('rect', { x: bk.x + 20, y: bk.y + 30, width: 2, height: bk.h - 90, rx: 1, fill: 'url(#sr-streak)', opacity: .6 }, front);
+  el('rect', { x: bk.x + bk.w - 15, y: bk.y + 20, width: 4, height: bk.h - 60, rx: 2, fill: 'url(#sr-streak)', opacity: .7 }, front);
+  const grad = el('g', { opacity: .85 }, front);
+  for (let k = 1; k <= 6; k++) { const y = bot - 12 - k * 21.5, major = k % 2 === 0; el('line', { x1: bk.x + bk.w - 52, y1: y, x2: bk.x + bk.w - (major ? 28 : 38), y2: y, stroke: V('rg-glass-hi'), 'stroke-width': major ? 1.6 : 1.1, 'stroke-linecap': 'round' }, grad); if (major) txt(grad, bk.x + bk.w - 58, y + 4, String(k * 25), { 'font-size': 10.5, 'font-family': F_BODY, fill: V('rg-glass-hi'), 'text-anchor': 'end', 'font-weight': 600 }); }
+  txt(grad, bk.x + 36, bot - 14, '250 mL', { 'font-size': 10, 'font-family': F_BODY, fill: V('rg-glass-hi'), 'text-anchor': 'middle', 'font-weight': 700, 'letter-spacing': '.05em' });
+  /* wash bottle for rinsing */
+  const wb = el('g', null, svg);
+  el('path', { d: 'M548 552 Q542 552 542 544 L542 470 Q542 452 560 448 L596 448 Q614 452 614 470 L614 544 Q614 552 608 552 Z', fill: 'url(#sr-plastic)', stroke: V('rg-glass-edge'), 'stroke-width': .9, opacity: .96 }, wb);
+  el('path', { d: 'M545 488 L611 488 L611 544 Q611 549 606 549 L550 549 Q545 549 545 544 Z', fill: 'url(#sr-water)', opacity: .7 }, wb);
+  el('rect', { x: 552, y: 494, width: 52, height: 34, rx: 4, fill: V('rg-tag-bg'), stroke: V('rg-tag-line') }, wb);
+  const liqLab = txt(wb, 578, 515, 'water', { 'font-size': 11.5, 'font-family': F_HEAD, fill: V('rg-tag-ink'), 'text-anchor': 'middle', 'font-weight': 700 });
+  el('rect', { x: 547, y: 456, width: 4, height: 84, rx: 2, fill: V('rg-glass-hi'), opacity: .5 }, wb);
+  el('rect', { x: 566, y: 434, width: 24, height: 16, rx: 3, fill: 'url(#sr-rubber)' }, wb);
+  el('path', { d: 'M578 434 L578 410 Q578 398 566 396 L536 392', fill: 'none', stroke: V('rg-plastic-2'), 'stroke-width': 4.5, 'stroke-linecap': 'round' }, wb);
+  el('path', { d: 'M578 434 L578 410 Q578 398 566 396 L536 392', fill: 'none', stroke: V('rg-glass-hi'), 'stroke-width': 1.2, 'stroke-linecap': 'round', opacity: .8 }, wb);
   /* labels */
   const rTag = el('g', null, svg);
-  el('rect', { x: 150, y: 196, width: 150, height: 30, rx: 5, fill: '#fff', stroke: C.line2 }, rTag);
-  const rLab = T(rTag, 225, 216, 'bore r = 0.05 cm', { 'text-anchor': 'middle', 'font-size': 14.5, fill: C.ink, 'font-weight': 600 });
-  el('line', { x1: 300, y1: 211, x2: 322, y2: 211, stroke: C.slate3, 'stroke-dasharray': '3 3' }, rTag);
-  const zeroLab = T(svg, 400, SURF + 4, '0 at the surface', { 'font-size': 12.5, fill: C.muted });
-  /* magnifier */
-  const lensView = el('circle', { cx: CX, cy: SURF, r: LR / Z, fill: 'none', stroke: C.slate, 'stroke-width': 1.2, 'stroke-dasharray': '3 2' }, svg);
-  const lensLink = el('line', { x1: CX, y1: SURF, x2: LX - LR, y2: LY, stroke: C.slate3, 'stroke-width': 1, 'stroke-dasharray': '4 4' }, svg);
-  const cp = el('clipPath', { id: 'sr-lens', clipPathUnits: 'userSpaceOnUse' }, svg.querySelector('defs')); el('circle', { cx: LX, cy: LY, r: LR - 3 }, cp);
+  el('rect', { x: 150, y: 196, width: 150, height: 30, rx: 15, fill: V('rg-tag-bg'), stroke: V('rg-tag-line'), filter: 'url(#sr-sh2)' }, rTag);
+  const rLab = T(rTag, 225, 216, 'bore r = 0.05 cm', { 'text-anchor': 'middle', 'font-size': 14, fill: V('rg-tag-ink'), 'font-weight': 600 });
+  el('line', { x1: 300, y1: 211, x2: 321, y2: 211, stroke: C.slate3, 'stroke-dasharray': '2 3' }, rTag);
+  el('circle', { cx: 322, cy: 211, r: 2, fill: C.slate3 }, rTag);
+  const zeroLab = T(svg, 318, SURF - 9, '0 at the surface', { 'font-size': 12, fill: C.muted, 'font-weight': 500, 'text-anchor': 'end' });
+  /* magnifier: bezel, magnified scene, vignette, glass reflection, handle */
+  const lensView = el('circle', { cx: CX, cy: SURF, r: LR / Z, fill: 'none', stroke: C.slate, 'stroke-width': 1, 'stroke-dasharray': '3 2' }, svg);
+  const lensLink = el('line', { x1: CX, y1: SURF, x2: LX - LR, y2: LY, stroke: C.slate3, 'stroke-width': 1, 'stroke-dasharray': '3 4' }, svg);
+  const cp = el('clipPath', { id: 'sr-lens', clipPathUnits: 'userSpaceOnUse' }, dfs); el('circle', { cx: LX, cy: LY, r: LR - 4 }, cp);
   const lens = el('g', null, svg);
-  el('circle', { cx: LX, cy: LY, r: LR, fill: '#fbfcfd' }, lens);
+  const hx = LX + LR * .71, hy = LY + LR * .71;
+  el('path', { d: `M${hx - 6} ${hy + 6} L${hx + 70} ${hy + 82}`, stroke: raw('#06100d'), 'stroke-width': 26, 'stroke-linecap': 'round', opacity: .14, filter: 'url(#sr-blur)' }, lens);
+  el('path', { d: `M${hx} ${hy} L${hx + 18} ${hy + 18}`, stroke: 'url(#sr-steel)', 'stroke-width': 16, 'stroke-linecap': 'butt' }, lens);
+  el('path', { d: `M${hx + 16} ${hy + 16} L${hx + 72} ${hy + 72}`, stroke: 'url(#sr-rubber)', 'stroke-width': 20, 'stroke-linecap': 'round' }, lens);
+  for (let k = 0; k < 6; k++) { const t = 26 + k * 8; el('path', { d: `M${hx + t - 7} ${hy + t + 7} L${hx + t + 7} ${hy + t - 7}`, stroke: raw('#000000'), 'stroke-width': 1.2, opacity: .35 }, lens); }
+  el('circle', { cx: LX, cy: LY, r: LR, fill: V('rg-ivory-1') }, lens);
   const lensClip = el('g', { 'clip-path': 'url(#sr-lens)' }, lens);
+  el('rect', { x: LX - LR, y: LY - LR, width: 2 * LR, height: 2 * LR, fill: V('rig-bg') }, lensClip);
   const use = el('use', { href: '#sr-scene' }, lensClip);
-  const lensFrame = el('circle', { cx: LX, cy: LY, r: LR, fill: 'none', stroke: C.ink2, 'stroke-width': 7 }, lens);
-  el('circle', { cx: LX, cy: LY, r: LR + 4, fill: 'none', stroke: C.slate3, 'stroke-width': 1.5 }, lens);
-  el('line', { x1: LX + LR * .72, y1: LY + LR * .72, x2: LX + LR * .72 + 70, y2: LY + LR * .72 + 70, stroke: C.slate2, 'stroke-width': 18, 'stroke-linecap': 'round' }, lens);
-  T(lens, LX, LY - LR - 14, 'magnifier ×6', { 'text-anchor': 'middle', 'font-size': 14, fill: C.muted, 'font-weight': 600 });
-  const lensNote = T(lens, LX, LY + LR + 30, '', { 'text-anchor': 'middle', 'font-size': 13.5, fill: C.acc2, 'font-weight': 600 });
+  el('circle', { cx: LX, cy: LY, r: LR - 4, fill: 'url(#sr-vignette)', 'pointer-events': 'none' }, lensClip);
+  el('path', { d: `M${LX - LR * .78} ${LY - LR * .2} A ${LR * .82} ${LR * .82} 0 0 1 ${LX - LR * .1} ${LY - LR * .8}`, fill: 'none', stroke: raw('#ffffff'), 'stroke-width': 10, 'stroke-linecap': 'round', opacity: .22, 'pointer-events': 'none' }, lensClip);
+  el('path', { d: `M${LX + LR * .5} ${LY + LR * .62} A ${LR * .8} ${LR * .8} 0 0 0 ${LX + LR * .72} ${LY + LR * .32}`, fill: 'none', stroke: raw('#ffffff'), 'stroke-width': 4, 'stroke-linecap': 'round', opacity: .18, 'pointer-events': 'none' }, lensClip);
+  const lensFrame = el('circle', { cx: LX, cy: LY, r: LR, fill: 'none', stroke: 'url(#sr-steel)', 'stroke-width': 11 }, lens);
+  el('circle', { cx: LX, cy: LY, r: LR + 5.5, fill: 'none', stroke: V('rg-steel-4'), 'stroke-width': 1 }, lens);
+  el('circle', { cx: LX, cy: LY, r: LR - 5.5, fill: 'none', stroke: V('rg-steel-4'), 'stroke-width': 1, opacity: .8 }, lens);
+  el('circle', { cx: LX, cy: LY, r: LR + 2, fill: 'none', stroke: V('rg-glass-hi'), 'stroke-width': 1.2, opacity: .7, 'stroke-dasharray': `${LR * 1.2} ${LR * 5}`, transform: `rotate(-150 ${LX} ${LY})` }, lens);
+  T(lens, LX, LY - LR - 16, 'magnifier ×6', { 'text-anchor': 'middle', 'font-size': 13.5, fill: C.muted, 'font-weight': 600, 'letter-spacing': '.02em' });
+  const lensNote = T(lens, LX + 10, LY + LR + 36, '', { 'text-anchor': 'middle', 'font-size': 13.5, fill: C.acc2, 'font-weight': 650 });
+  const FILLOP = { water: 1, soap: .82, ethanol: .58 };
 
   function draw() {
-    const b = bw(), ow = b + 3.2, top = st.bottom - TLEN;
+    const b = bw(), ow = b + 4.4, top = st.bottom - TLEN;
     tubeRect.setAttribute('x', TX - ow); tubeRect.setAttribute('y', top); tubeRect.setAttribute('width', 2 * ow);
-    [[boreL, TX - b], [boreR, TX + b]].forEach(([l, x]) => { l.setAttribute('x1', x); l.setAttribute('x2', x); l.setAttribute('y1', top + 1); l.setAttribute('y2', st.bottom - 1); });
-    ringT.setAttribute('x', TX - ow - 4); ringT.setAttribute('y', top - 4); ringT.setAttribute('width', 2 * ow + 8);
+    boreFill.setAttribute('x', TX - b); boreFill.setAttribute('y', top + 1); boreFill.setAttribute('width', 2 * b); boreFill.setAttribute('height', TLEN - 2);
+    [[boreL, TX - b], [boreR, TX + b]].forEach(([l, x]) => { l.setAttribute('x1', x); l.setAttribute('x2', x); l.setAttribute('y1', top + 1.5); l.setAttribute('y2', st.bottom - 1); });
+    tubeHi.setAttribute('x', TX - ow + 1.3); tubeHi.setAttribute('y', top + 3);
+    tubeTop.setAttribute('cy', top + .6); tubeTop.setAttribute('rx', ow - .4);
+    hit.setAttribute('x', TX - 16); hit.setAttribute('y', top); hit.setAttribute('width', 32);
+    ringT.setAttribute('x', TX - ow - 5); ringT.setAttribute('y', top - 4); ringT.setAttribute('width', 2 * ow + 10);
     const ay = top + 34;
-    arm.setAttribute('y', ay + 2); arm.setAttribute('width', TX - ow - 75);
-    boss.setAttribute('y', ay - 4.5);
-    jaw.setAttribute('x', TX - ow - 3); jaw.setAttribute('y', ay - 7); jaw.setAttribute('width', 2 * ow + 6);
-    const fill = FILL[st.liq]; water.setAttribute('fill', fill); colPath.setAttribute('fill', fill);
+    arm.setAttribute('y', ay - 3.5); arm.setAttribute('width', TX - ow - 12 - 80);
+    bossG.innerHTML = ''; boss(bossG, ay);
+    jawG.innerHTML = '';
+    el('rect', { x: TX - ow - 14, y: ay - 13, width: 14, height: 26, rx: 3, fill: 'url(#sr-steelv)', stroke: V('rg-steel-4'), 'stroke-width': .6 }, jawG);
+    el('rect', { x: TX - ow - 2.5, y: ay - 11, width: 2.5, height: 22, fill: V('rg-cork') }, jawG);
+    el('rect', { x: TX - ow - 14, y: ay - 4, width: 2 * ow + 14, height: 8, rx: 2, fill: 'url(#sr-steelv)', opacity: .92 }, jawG);
+    el('rect', { x: TX - ow - 14, y: ay - 4, width: 2 * ow + 14, height: 1.2, fill: V('rg-glass-hi'), opacity: .8 }, jawG);
+    el('circle', { cx: TX - ow - 7, cy: ay, r: 2.6, fill: 'url(#sr-cap)', stroke: V('rg-steel-4'), 'stroke-width': .5 }, jawG);
+    el('line', { x1: TX - ow - 8.6, y1: ay - 1.6, x2: TX - ow - 5.4, y2: ay + 1.6, stroke: V('rg-steel-4'), 'stroke-width': .7 }, jawG);
+    liqG.setAttribute('opacity', FILLOP[st.liq]); colPath.setAttribute('opacity', FILLOP[st.liq] * .95);
     if (st.col > 0 && st.bottom > SURF) {
-      const yM = SURF - st.col * PX, bot = st.bottom - .5;
-      colPath.setAttribute('d', `M${TX - b} ${bot} L${TX - b} ${yM - b} Q${TX} ${yM + b} ${TX + b} ${yM - b} L${TX + b} ${bot} Z`);
+      const yM = SURF - st.col * PX, bt = st.bottom - .5;
+      colPath.setAttribute('d', `M${TX - b} ${bt} L${TX - b} ${yM - b} Q${TX} ${yM + b} ${TX + b} ${yM - b} L${TX + b} ${bt} Z`);
       menPath.setAttribute('d', `M${TX - b} ${yM - b} Q${TX} ${yM + b} ${TX + b} ${yM - b}`);
-    } else { colPath.setAttribute('d', ''); menPath.setAttribute('d', ''); }
+      menHi.setAttribute('d', `M${TX - b * .7} ${yM - b * .55 + .6} Q${TX} ${yM + b * .75 + .6} ${TX + b * .7} ${yM - b * .55 + .6}`);
+    } else { colPath.setAttribute('d', ''); menPath.setAttribute('d', ''); menHi.setAttribute('d', ''); }
     const yView = SURF - Math.max(0, st.col) * PX;
     use.setAttribute('transform', `translate(${LX} ${LY}) scale(${Z}) translate(${-CX} ${-yView})`);
     lensView.setAttribute('cy', yView); lensLink.setAttribute('y1', yView); lensLink.setAttribute('x1', CX + LR / Z);
@@ -113,7 +206,7 @@
     if (st.busy) return; if (st.dipped) { say('Lift the capillary out of the beaker before rinsing it.', 'warn'); return; }
     st.busy = true; say(`Drawing ${lq().name} up through the bore and letting it drain…`);
     rinseDrops.innerHTML = '';
-    const top = st.bottom - TLEN, drops = [0, 1, 2, 3, 4].map(k => el('circle', { cx: TX, cy: top, r: Math.max(1.2, bw() * .8), fill: FILL[st.liq] }, rinseDrops));
+    const top = st.bottom - TLEN, drops = [0, 1, 2, 3, 4].map(k => el('circle', { cx: TX, cy: top, r: Math.max(1.2, bw() * .8), fill: 'var(--rg-water-2)' }, rinseDrops));
     await tween(1800, k => drops.forEach((d, i) => { const f = clamp(k * 1.6 - i * .15, 0, 1); d.setAttribute('cy', top + f * (TLEN + 14)); d.setAttribute('opacity', f >= 1 ? 0 : 1); }));
     rinseDrops.innerHTML = ''; st.rinsed = true; st.busy = false; updStatus();
     say('Rinsed: the bore is clean and wetted by the liquid. Now dip the capillary.', 'ok');
@@ -288,14 +381,14 @@
     await Tt.teach('Magnifier', 'The magnifier enlarges the scale and the top of the column six times, so h can be read to 0.01 cm. The dashed circle on the bench shows where it looks.', { box: box('lens'), label: 'magnifier ×6' });
     await Tt.teach('Liquid', 'The liquid under test is water: density ρ = 1.00 g/cm³, shown in the panel below.', { el: selLiq, label: 'liquid: water' });
     await Tt.teach('Capillary in use', 'The capillary with bore radius 0.05 cm is selected.', { el: selRad, label: 'r = 0.05 cm' });
-    await Tt.teach('Rinse first', 'The capillary is rinsed with the liquid itself: water is drawn through the bore and let drain. This cleans the glass and wets it, so the contact angle is 0°.', { el: $('st-rinse'), label: 'Rinse' });
+    await Tt.teach('Rinse first', 'The capillary is rinsed with the liquid itself: water is drawn through the bore and let drain. This cleans the glass and wets it, so the contact angle is 0°.', { el: $('st-rinse'), label: 'Rinse', focus: [rig], alt: box('tube') });
     await rinse();
-    await Tt.teach('Rinsed', 'The bore is clean and wet. The status line now shows rinsed: yes.', { el: $('st-status'), label: 'rinsed' });
+    await Tt.teach('Rinsed', 'The bore is clean and wet. The status line now shows rinsed: yes.', { el: $('st-status'), label: 'rinsed', focus: [rig, $('st-status')], alt: box('tube') });
     await Tt.teach('Dip the capillary', 'The capillary is lowered until its end is well under the water surface.', { box: box('tube'), label: 'dip', ms: 2600 });
     await dip();
     await Tt.teach('Capillary rise', `Water climbs the bore, pulled up by surface tension along the inner rim, and stops where the weight of the column balances that pull. The top of the column is curved: the meniscus.`, { box: box('tube'), label: 'column of water' });
     await readDip(Tt, 1, true);
-    await Tt.teach('A fresh dip', 'Each reading comes from a new dip, so the capillary is lifted out and dipped again. The column forms afresh and may settle a little differently.', { el: $('st-lift'), label: 'Lift out', ms: 3200 });
+    await Tt.teach('A fresh dip', 'Each reading comes from a new dip, so the capillary is lifted out and dipped again. The column forms afresh and may settle a little differently.', { el: $('st-lift'), label: 'Lift out', ms: 3200, focus: [rig], alt: box('tube') });
     await lift(); await dip(); await readDip(Tt, 2, false);
     await Tt.teach('Third dip', 'Lift out and dip once more for the third reading.', { box: box('tube'), label: 'dip 3', ms: 2400 });
     await lift(); await dip(); await readDip(Tt, 3, false);

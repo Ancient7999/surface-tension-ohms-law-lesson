@@ -11,9 +11,32 @@ window.SOL = (function () {
   /* ---------- helpers ---------- */
   const NS = 'http://www.w3.org/2000/svg';
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* theme-aware colours: every literal hex colour given to an SVG paint attribute becomes a CSS variable
+     whose light value is the literal and whose dark value is derived (neutrals and pale tints are inverted in
+     lightness, saturated mid tones are kept), so figures follow the light and dark themes */
+  const FIXED = { '#b8336a': 'var(--acc)', '#8a2550': 'var(--acc-2)', '#e07aa3': 'var(--acc-3)', '#fbe9f0': 'var(--acc-pale)', '#fbecf2': 'var(--acc-pale)', '#fdf3f7': 'var(--acc-pale)', '#f2c4cf': 'var(--acc-line)', '#e7c9d6': 'var(--acc-line)',
+    '#2b8fb3': 'var(--aqua)', '#1d6d8a': 'var(--aqua-2)', '#e3f2f8': 'var(--aqua-pale)', '#e5f3f8': 'var(--aqua-pale)', '#fff': 'var(--card)', '#ffffff': 'var(--card)', '#1c2230': 'var(--ink)', '#384152': 'var(--ink-2)', '#687284': 'var(--muted)', '#9aa3b0': 'var(--slate-3)', '#5d6878': 'var(--slate)', '#3f4856': 'var(--slate-2)', '#c9cfd7': 'var(--line-2)', '#dfe3e8': 'var(--line)' };
+  const PAINT = { fill: 1, stroke: 1, 'stop-color': 1, 'flood-color': 1, color: 1 };
+  let hexSheet = null; const hexSeen = new Set();
+  function hsl(h) { h = h.length === 4 ? '#' + h[1] + h[1] + h[2] + h[2] + h[3] + h[3] : h; const r = parseInt(h.slice(1, 3), 16) / 255, g = parseInt(h.slice(3, 5), 16) / 255, b = parseInt(h.slice(5, 7), 16) / 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2; let s = 0, hh = 0; if (mx !== mn) { const d = mx - mn; s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn); hh = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; hh *= 60; } return [hh, s, l]; }
+  function darkOf(h) {
+    let [hh, s, l] = hsl(h);
+    if (s < .3 || l > .82 || l < .26) { l = .13 + (1 - l) * .72; s = Math.min(s, .35) * .8; } else { l = Math.min(.72, l + .08); }
+    return `hsl(${hh.toFixed(0)} ${(s * 100).toFixed(0)}% ${(l * 100).toFixed(0)}%)`;
+  }
+  function themed(v) {
+    const k = v.toLowerCase(); if (FIXED[k]) return FIXED[k];
+    const name = '--h' + k.slice(1);
+    if (!hexSeen.has(k)) {
+      hexSeen.add(k);
+      if (!hexSheet) { hexSheet = document.createElement('style'); hexSheet.id = 'hex-theme'; document.head.appendChild(hexSheet); }
+      hexSheet.textContent += `:root{${name}:${k}}html[data-theme=dark]{${name}:${darkOf(k)}}\n`;
+    }
+    return `var(${name})`;
+  }
   function el(tag, attrs, parent) {
     const e = document.createElementNS(NS, tag);
-    if (attrs) for (const k in attrs) if (attrs[k] != null) e.setAttribute(k, attrs[k]);
+    if (attrs) for (const k in attrs) if (attrs[k] != null) { let v = attrs[k]; if (PAINT[k] && typeof v === 'string' && /^#[0-9a-f]{3}([0-9a-f]{3})?$/i.test(v)) v = themed(v); e.setAttribute(k, v); }
     if (parent) parent.appendChild(e);
     return e;
   }
@@ -35,83 +58,130 @@ window.SOL = (function () {
   const near = (a, b, tol) => isFinite(a) && isFinite(b) && b !== 0 && Math.abs(a - b) / Math.abs(b) <= tol;
   const fmt = (v, d) => (Math.abs(v) < 1e-12 ? 0 : v).toFixed(d);
   function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-  const F_HEAD = 'Commissioner, system-ui, sans-serif', F_BODY = 'Fira Sans, system-ui, sans-serif';
-  const C = { ink: '#1c2230', ink2: '#384152', muted: '#687284', acc: '#b8336a', acc2: '#8a2550', acc3: '#e07aa3', accPale: '#fbe9f0', aqua: '#2b8fb3', aqua2: '#1d6d8a', aquaPale: '#e3f2f8', copper: '#b06d3b', slate: '#5d6878', slate2: '#3f4856', slate3: '#9aa3b0', line: '#dfe3e8', line2: '#c9cfd7', paper: '#fcfdfe', good: '#23806a', bad: '#b23a3a', warn: '#8c5a0e' };
+  const F_HEAD = 'var(--f-head)', F_BODY = 'var(--f-body)';
+  const C = { ink: 'var(--ink)', ink2: 'var(--ink-2)', muted: 'var(--muted)', acc: 'var(--acc)', acc2: 'var(--acc-2)', acc3: 'var(--acc-3)', accPale: 'var(--acc-pale)', aqua: 'var(--aqua)', aqua2: 'var(--aqua-2)', aquaPale: 'var(--aqua-pale)', copper: 'var(--copper)', slate: 'var(--slate)', slate2: 'var(--slate-2)', slate3: 'var(--slate-3)', line: 'var(--line)', line2: 'var(--line-2)', paper: 'var(--card)', good: 'var(--good)', bad: 'var(--bad)', warn: 'var(--warn)' };
+  /* shared apparatus materials: gradients and filters drawn from the theme's material tokens */
+  /* a literal colour that must not follow the theme (a physical colour such as an LED or a red plug) */
+  const raw = h => `rgb(${parseInt(h.slice(1, 3), 16)},${parseInt(h.slice(3, 5), 16)},${parseInt(h.slice(5, 7), 16)})`;
+  let noiseURL = null;
+  function noise() {
+    if (noiseURL) return noiseURL;
+    const c = document.createElement('canvas'); c.width = c.height = 96; const x = c.getContext('2d'), im = x.createImageData(96, 96), r = mulberry32(11);
+    for (let i = 0; i < im.data.length; i += 4) { const v = 110 + r() * 145; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 26; }
+    x.putImageData(im, 0, 0); noiseURL = c.toDataURL(); return noiseURL;
+  }
   function defs(svg, id) {
-    const d = svg.querySelector('defs') || el('defs', null, svg);
-    function lin(name, stops, x2, y2) {
-      const g = el('linearGradient', { id: `${id}-${name}`, x1: 0, y1: 0, x2: x2 || 0, y2: y2 == null ? 1 : y2 }, d);
+    const d = svg.querySelector('defs') || el('defs', null, svg), V = n => `var(--${n})`;
+    function lin(name, stops, x2, y2, x1, y1) {
+      const g = el('linearGradient', { id: `${id}-${name}`, x1: x1 || 0, y1: y1 || 0, x2: x2 || 0, y2: y2 == null ? 1 : y2 }, d);
       stops.forEach(([o, c, op]) => el('stop', { offset: o, 'stop-color': c, 'stop-opacity': op == null ? 1 : op }, g));
     }
-    lin('glass', [[0, '#cfe3ec', .55], [.18, '#ffffff', .85], [.5, '#e6f1f5', .35], [.85, '#ffffff', .6], [1, '#b9d3df', .6]], 1, 0);
-    lin('water', [[0, '#7cc3dc', .75], [1, '#3f9fc2', .85]]);
-    lin('waterH', [[0, '#5fb2d0'], [.5, '#a8dbec'], [1, '#4aa5c6']], 1, 0);
-    lin('steel', [[0, '#f1f3f5'], [.5, '#c6ccd3'], [1, '#8f98a3']], 1, 0);
-    lin('steelv', [[0, '#e9edf1'], [1, '#aab2bc']]);
-    lin('case', [[0, '#f6f7f9'], [1, '#dde2e8']]);
-    lin('panel', [[0, '#384152'], [1, '#262d3a']]);
-    lin('lcd', [[0, '#e3ece4'], [1, '#cddbd0']]);
-    lin('bench', [[0, '#e7eaee'], [1, '#d6dbe1']]);
-    lin('board', [[0, '#fbfbf8'], [1, '#ecece6']]);
-    lin('knob', [[0, '#5b6574'], [1, '#262d3a']]);
-    lin('res', [[0, '#e9d6b4'], [.45, '#f6e7cb'], [1, '#cdb48a']]);
-    lin('copper', [[0, '#d99a66'], [1, '#9c5a2b']]);
+    function rad(name, stops, cx, cy, r, fx, fy) {
+      const g = el('radialGradient', { id: `${id}-${name}`, cx: cx == null ? .5 : cx, cy: cy == null ? .5 : cy, r: r || .5, fx: fx == null ? cx : fx, fy: fy == null ? cy : fy }, d);
+      stops.forEach(([o, c, op]) => el('stop', { offset: o, 'stop-color': c, 'stop-opacity': op == null ? 1 : op }, g));
+    }
+    /* glass: dark refracting edges, a clear middle and two specular streaks */
+    lin('glass', [[0, V('rg-glass-edge'), .55], [.07, V('rg-glass-tint'), .35], [.16, V('rg-glass-hi'), .9], [.24, V('rg-glass-tint'), .12], [.72, V('rg-glass-tint'), .1], [.82, V('rg-glass-hi'), .55], [.93, V('rg-glass-tint'), .3], [1, V('rg-glass-edge'), .6]], 1, 0);
+    lin('glassWall', [[0, V('rg-glass-edge'), .7], [.35, V('rg-glass-tint'), .45], [.6, V('rg-glass-hi'), .85], [1, V('rg-glass-edge'), .6]], 1, 0);
+    lin('streak', [[0, V('rg-glass-hi'), 0], [.15, V('rg-glass-hi'), .75], [.85, V('rg-glass-hi'), .5], [1, V('rg-glass-hi'), 0]]);
+    lin('water', [[0, V('rg-water-1'), .78], [.35, V('rg-water-2'), .78], [1, V('rg-water-3'), .9]]);
+    lin('waterCol', [[0, V('rg-water-3'), .95], [.45, V('rg-water-1'), .95], [1, V('rg-water-3'), .95]], 1, 0);
+    lin('waterH', [[0, V('rg-water-2')], [.5, V('rg-water-1')], [1, V('rg-water-2')]], 1, 0);
+    lin('surface', [[0, V('rg-water-1'), .2], [.5, V('rg-glass-hi'), .7], [1, V('rg-water-1'), .2]], 1, 0);
+    /* metals */
+    lin('steel', [[0, V('rg-steel-3')], [.18, V('rg-steel-1')], [.42, V('rg-steel-2')], [.7, V('rg-steel-1')], [1, V('rg-steel-4')]], 1, 0);
+    lin('steelv', [[0, V('rg-steel-1')], [.45, V('rg-steel-2')], [1, V('rg-steel-4')]]);
+    lin('iron', [[0, V('rg-iron-hi')], [.12, V('rg-iron-1')], [1, V('rg-iron-2')]]);
+    lin('brass', [[0, raw('#f3d79a')], [.45, raw('#c99a45')], [1, raw('#7d5a20')]]);
+    lin('copper', [[0, raw('#e7b07a')], [.5, raw('#b97338')], [1, raw('#7b4519')]]);
+    /* instrument cases and faces */
+    lin('case', [[0, V('rg-case-1')], [.55, V('rg-case-2')], [1, V('rg-case-3')]]);
+    lin('caseEdge', [[0, V('rg-glass-hi'), .7], [.08, V('rg-glass-hi'), 0], [.92, V('rg-bake-edge'), 0], [1, V('rg-bake-edge'), .35]]);
+    lin('bake', [[0, V('rg-bake-1')], [1, V('rg-bake-2')]]);
+    lin('face', [[0, V('rg-face-1')], [1, V('rg-face-2')]]);
+    lin('ivory', [[0, V('rg-ivory-2')], [.18, V('rg-ivory-1')], [.8, V('rg-ivory-1')], [1, V('rg-ivory-2')]], 1, 0);
+    lin('mirror', [[0, V('rg-mirror-2')], [.3, V('rg-mirror-1')], [.55, V('rg-mirror-2')], [.8, V('rg-mirror-1')], [1, V('rg-mirror-2')]], 1, 0);
+    lin('glare', [[0, 'white', .0], [.42, 'white', .0], [.5, 'white', .28], [.62, 'white', .06], [1, 'white', 0]], 1, 1);
+    lin('panel', [[0, V('rg-bake-1')], [1, V('rg-bake-2')]]);
+    lin('lcd', [[0, V('rg-lcd-bg')], [1, V('rg-lcd-bg')]]);
+    lin('bench', [[0, V('rg-bench-1')], [.18, V('rg-bench-2')], [1, V('rg-bench-3')]]);
+    lin('board', [[0, V('rg-board-1')], [1, V('rg-board-2')]]);
+    lin('knob', [[0, raw('#59625f')], [.5, raw('#2b3130')], [1, raw('#121615')]], 1, 1);
+    lin('res', [[0, V('rg-res-3')], [.3, V('rg-res-2')], [.55, V('rg-res-1')], [1, V('rg-res-3')]]);
+    lin('plastic', [[0, V('rg-plastic-2')], [.3, V('rg-plastic-1')], [.62, V('rg-plastic-1')], [1, V('rg-plastic-2')]], 1, 0);
+    lin('rubber', [[0, raw('#4a5150')], [.5, V('rg-rubber')], [1, raw('#0d100f')]], 1, 0);
+    lin('plugR', [[0, raw('#7c1d17')], [.35, raw('#e2574b')], [.6, raw('#c7382d')], [1, raw('#6a1611')]], 1, 0);
+    lin('plugK', [[0, raw('#050606')], [.38, raw('#4a5150')], [.6, raw('#262b2a')], [1, raw('#050606')]], 1, 0);
+    rad('vignette', [[0, 'black', 0], [.72, 'black', 0], [1, 'black', .32]]);
+    rad('cap', [[0, V('rg-steel-1')], [.6, V('rg-steel-2')], [1, V('rg-steel-4')]], .38, .32, .7);
+    rad('ledOn', [[0, raw('#eaffef')], [.35, raw('#4be38f')], [1, raw('#14794a')]], .4, .35, .65);
+    rad('ledOff', [[0, raw('#6a7774')], [1, raw('#2b3331')]], .4, .35, .65);
+    rad('pinR', [[0, raw('#ff9c8f')], [.4, raw('#d8443a')], [1, raw('#6e1510')]], .38, .32, .7);
+    rad('pinK', [[0, raw('#7c8584')], [.4, raw('#2c3231')], [1, raw('#050606')]], .38, .32, .7);
+    /* filters: soft drop shadow, blurred contact shadow, LCD glow */
     const sh = el('filter', { id: `${id}-sh`, x: '-20%', y: '-20%', width: '140%', height: '160%' }, d);
-    el('feDropShadow', { dx: 0, dy: 3, stdDeviation: 3, 'flood-color': '#1c2230', 'flood-opacity': .18 }, sh);
+    el('feDropShadow', { dx: 0, dy: 4, stdDeviation: 4, 'flood-color': raw('#06100d'), 'flood-opacity': .2 }, sh);
+    const sh2 = el('filter', { id: `${id}-sh2`, x: '-30%', y: '-30%', width: '160%', height: '180%' }, d);
+    el('feDropShadow', { dx: 0, dy: 1.5, stdDeviation: 1.4, 'flood-color': raw('#06100d'), 'flood-opacity': .35 }, sh2);
+    const bl = el('filter', { id: `${id}-blur`, x: '-50%', y: '-200%', width: '200%', height: '500%' }, d);
+    el('feGaussianBlur', { stdDeviation: 5 }, bl);
+    const gl = el('filter', { id: `${id}-glow`, x: '-30%', y: '-30%', width: '160%', height: '160%' }, d);
+    el('feGaussianBlur', { in: 'SourceGraphic', stdDeviation: 2.2, result: 'b' }, gl);
+    const m = el('feMerge', null, gl); el('feMergeNode', { in: 'b' }, m); el('feMergeNode', { in: 'SourceGraphic' }, m);
+    /* grain: a tiny noise tile, used as a pattern on bench and cases (no live filter cost) */
+    const pt = el('pattern', { id: `${id}-grain`, patternUnits: 'userSpaceOnUse', width: 96, height: 96 }, d);
+    el('image', { href: noise(), width: 96, height: 96 }, pt);
+    /* knurling */
+    const kn = el('pattern', { id: `${id}-knurl`, patternUnits: 'userSpaceOnUse', width: 3, height: 3, patternTransform: 'rotate(45)' }, d);
+    el('rect', { width: 3, height: 3, fill: 'black', opacity: .0 }, kn); el('path', { d: 'M0 0V3M0 0H3', stroke: 'black', 'stroke-width': .8, opacity: .35 }, kn);
     return d;
   }
 
-  /* ---------- background: faint circuit traces with flowing charge, over a rippling meniscus line ---------- */
+  /* ---------- background: slow silk ribbons of fine contour lines, drifting like a liquid surface ---------- */
   function background() {
     const cv = $('bg'), ctx = cv.getContext('2d');
-    let W = 0, H = 0, traces = [], ripples = [], rT = 0;
-    function size() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      W = cv.clientWidth; H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const rnd = mulberry32(7), u = Math.max(36, Math.min(W, H) / 14);
-      traces = [];
-      for (let i = 0; i < 9; i++) {
-        let x = Math.round(rnd() * W / u) * u, y = Math.round(rnd() * H * .75 / u) * u;
-        const pts = [[x, y]]; let horiz = rnd() < .5;
-        for (let k = 0; k < 5; k++) {
-          const d = (1 + Math.floor(rnd() * 4)) * u * (rnd() < .5 ? -1 : 1);
-          if (horiz) x += d; else y += d;
-          pts.push([x, y]); horiz = !horiz;
-        }
-        let len = 0; const seg = [];
-        for (let k = 1; k < pts.length; k++) { const l = Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]); seg.push(l); len += l; }
-        traces.push({ pts, seg, len, dots: [0, .33, .66].map(o => o * len), sp: 26 + rnd() * 18 });
-      }
-    }
-    function at(t, s) { let k = 0; while (k < t.seg.length && s > t.seg[k]) { s -= t.seg[k]; k++; } if (k >= t.seg.length) return t.pts[t.pts.length - 1]; const a = t.pts[k], b = t.pts[k + 1], f = s / t.seg[k]; return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; }
-    let last = performance.now(), T = 0;
+    let W = 0, H = 0, col = null, last = 0;
+    function readCols() { const cs = getComputedStyle(document.documentElement); col = { a: cs.getPropertyValue('--bg-line-rgb').trim(), b: cs.getPropertyValue('--bg-line2-rgb').trim(), dark: document.documentElement.dataset.theme === 'dark' }; }
+    function size() { const dpr = Math.min(window.devicePixelRatio || 1, 1.5); W = cv.clientWidth; H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+    const RIB = [ { y: .78, amp: .07, f: 1.3, sp: .045, n: 16, gap: 5.5, c: 'a', ph: 0 }, { y: .30, amp: .05, f: 1.0, sp: -.03, n: 11, gap: 6.5, c: 'b', ph: 2.1 } ];
     function draw(now) {
-      const dt = Math.min(.05, (now - last) / 1000); last = now; T += dt;
-      ctx.clearRect(0, 0, W, H);
-      ctx.lineWidth = 1.2; ctx.lineJoin = 'round';
-      traces.forEach(t => {
-        ctx.strokeStyle = 'rgba(93,104,120,.10)'; ctx.beginPath(); t.pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.stroke();
-        [t.pts[0], t.pts[t.pts.length - 1]].forEach(p => { ctx.strokeStyle = 'rgba(93,104,120,.16)'; ctx.beginPath(); ctx.arc(p[0], p[1], 3.2, 0, 6.283); ctx.stroke(); });
-        t.dots = t.dots.map(s => (s + t.sp * dt) % t.len);
-        t.dots.forEach(s => { const p = at(t, s); ctx.fillStyle = 'rgba(184,51,106,.32)'; ctx.beginPath(); ctx.arc(p[0], p[1], 2, 0, 6.283); ctx.fill(); });
-      });
-      const y0 = H * .86;
-      for (let j = 0; j < 2; j++) {
-        ctx.beginPath();
-        for (let x = 0; x <= W; x += 8) {
-          let y = y0 + j * 14 + Math.sin(x / 90 + T * (.6 + j * .2)) * 5 + Math.sin(x / 37 - T * .9) * 1.6;
-          ripples.forEach(r => { const d = Math.abs(x - r.x); if (d < r.R && d > r.R - 60) y -= Math.sin((r.R - d) / 60 * Math.PI) * 4 * (1 - r.R / 340); });
-          x ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      const t = now / 1000; ctx.clearRect(0, 0, W, H); if (!col) readCols();
+      const base = col.dark ? .085 : .07;
+      RIB.forEach(r => {
+        for (let k = 0; k < r.n; k++) {
+          const mid = 1 - Math.abs(k - (r.n - 1) / 2) / (r.n / 2), a = base * (.25 + .75 * mid);
+          ctx.strokeStyle = `rgba(${col[r.c]},${a.toFixed(3)})`; ctx.lineWidth = 1;
+          ctx.beginPath();
+          for (let x = -20; x <= W + 20; x += 18) {
+            const u = x / W;
+            const y = H * r.y + k * r.gap * (1 + .35 * Math.sin(u * 3 + t * .2 + r.ph))
+              + H * r.amp * Math.sin(u * Math.PI * r.f * 2 + t * r.sp * 6 + r.ph + k * .045)
+              + H * r.amp * .45 * Math.sin(u * Math.PI * r.f * 4.3 - t * r.sp * 9 + k * .03);
+            x <= -20 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          }
+          ctx.stroke();
         }
-        ctx.strokeStyle = j ? 'rgba(43,143,179,.08)' : 'rgba(43,143,179,.16)'; ctx.lineWidth = 1.4; ctx.stroke();
-      }
-      rT += dt; if (rT > 3.2) { rT = 0; ripples.push({ x: W * (.15 + Math.random() * .7), R: 0 }); }
-      ripples.forEach(r => { r.R += 60 * dt; ctx.strokeStyle = `rgba(43,143,179,${(.14 * (1 - r.R / 340)).toFixed(3)})`; ctx.beginPath(); ctx.ellipse(r.x, y0 + 4, r.R, r.R * .12, 0, 0, 6.283); ctx.stroke(); });
-      ripples = ripples.filter(r => r.R < 340);
+      });
     }
-    function frame(n) { draw(n); requestAnimationFrame(frame); }
-    window.addEventListener('resize', size); size();
+    function frame(n) { if (n - last > 33) { draw(n); last = n; } requestAnimationFrame(frame); }
+    window.addEventListener('resize', () => { size(); draw(performance.now()); }); size();
+    L.bgTheme = () => { readCols(); draw(performance.now()); };
     if (reduced) draw(performance.now()); else requestAnimationFrame(frame);
+  }
+
+  /* ---------- light / dark theme: follows the system until a choice is made, then remembers it ---------- */
+  function theme() {
+    const root = document.documentElement, btn = $('theme-tg'), mq = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
+    const saved = () => { try { return localStorage.getItem('sol-theme'); } catch (_) { return null; } };
+    function apply(t) {
+      root.setAttribute('data-theme', t);
+      btn.setAttribute('aria-label', t === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+      btn.setAttribute('aria-pressed', t === 'dark' ? 'true' : 'false');
+      if (L.bgTheme) L.bgTheme();
+    }
+    apply(root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+    btn.addEventListener('click', () => { const t = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; try { localStorage.setItem('sol-theme', t); } catch (_) { /* not stored */ } apply(t); });
+    if (mq) { const on = e => { if (!saved()) apply(e.matches ? 'dark' : 'light'); }; if (mq.addEventListener) mq.addEventListener('change', on); else if (mq.addListener) mq.addListener(on); }
   }
 
   /* ---------- navigation: segmented lab tabs in the top bar, numbered dots for the pages of the current lab ---------- */
@@ -285,8 +355,8 @@ window.SOL = (function () {
     sel(0);
   }
 
-  Object.assign(L, { TC, tnow, tcSet, NS, reduced, el, txt, tsub, $, clamp, sleep, svgPoint, parseNum, near, fmt, mulberry32, F_HEAD, F_BODY, C, defs, makePlot, mcq, methodSteps, onEnter, onLeave, goTo, cursorTick, shuffle });
-  L._init = [background, nav, cursor, extras];
+  Object.assign(L, { raw, TC, tnow, tcSet, NS, reduced, el, txt, tsub, $, clamp, sleep, svgPoint, parseNum, near, fmt, mulberry32, F_HEAD, F_BODY, C, defs, makePlot, mcq, methodSteps, onEnter, onLeave, goTo, cursorTick, shuffle });
+  L._init = [background, theme, nav, cursor, extras];
   L.boot = () => { L._init.forEach(f => f()); goTo(fromHash(), false); };
   return L;
 })();

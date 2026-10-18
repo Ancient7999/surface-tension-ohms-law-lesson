@@ -18,4 +18,4 @@ In the calculation panels, every symbol and number can be hovered or tapped to s
 
 The site is plain HTML, CSS and JavaScript with no build step. Open `index.html` or serve the folder with any static file server.
 
-Fonts: Commissioner and Fira Sans (SIL Open Font License).
+Fonts: Manrope and Inter (SIL Open Font License). Light and dark themes follow the system setting; the button at the top right switches between them.

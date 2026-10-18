@@ -9,90 +9,203 @@
     'P+': { x: 110, y: 470, col: '#c0392b', nm: 'supply +' }, 'P-': { x: 210, y: 470, col: '#1c2230', nm: 'supply −' },
     'A+': { x: 380, y: 222, col: '#c0392b', nm: 'ammeter +' }, 'A-': { x: 510, y: 222, col: '#1c2230', nm: 'ammeter −' },
     'V+': { x: 680, y: 222, col: '#c0392b', nm: 'voltmeter +' }, 'V-': { x: 810, y: 222, col: '#1c2230', nm: 'voltmeter −' },
-    'R1': { x: 520, y: 440, col: C.copper, nm: 'resistor end 1' }, 'R2': { x: 800, y: 440, col: C.copper, nm: 'resistor end 2' }
+    'R1': { x: 548, y: 440, col: C.copper, nm: 'resistor end 1' }, 'R2': { x: 772, y: 440, col: C.copper, nm: 'resistor end 2' }
   };
   const KEYS = Object.keys(TERMS);
-  const WCOL = ['#c0392b', '#2b6fb3', '#23806a', '#1c2230', '#b06d3b', '#7a4bb3', '#d4880f'];
   const st = { vset: 2, on: false, wires: [], rows: [], order: [], rng: Math.random, scatter: {}, ok: false, read: null, pending: null, busy: false };
   const r2 = v => Math.round(v * 100) / 100, r4 = v => Math.round(v * 1e4) / 1e4;
 
-  /* ---------- drawing the bench ---------- */
+  /* ---------- drawing the bench: supply, two moving-coil meters, breadboard with the resistor, cables ---------- */
+  const V = n => `var(--${n})`, raw = L.raw;
   el('rect', { x: 0, y: 545, width: 1000, height: 55, fill: 'url(#or-bench)' }, svg);
-  el('line', { x1: 0, y1: 545, x2: 1000, y2: 545, stroke: C.line2 }, svg);
-  // power supply
+  el('rect', { x: 0, y: 545, width: 1000, height: 55, fill: 'url(#or-grain)', opacity: .5 }, svg);
+  el('line', { x1: 0, y1: 545.5, x2: 1000, y2: 545.5, stroke: V('rg-glass-hi'), style: 'stroke-opacity:calc(.7 - var(--rg-cast) * .9)' }, svg);
+  [[160, 130], [660, 290]].forEach(([cx, rx]) => el('ellipse', { cx, cy: 547, rx, ry: 6, fill: raw('#06100d'), filter: 'url(#or-blur)', style: 'opacity:calc(var(--rg-cast) * 1.1)' }, svg));
+  const screw = (g, x, y, r) => { el('circle', { cx: x, cy: y, r: r || 3.4, fill: 'url(#or-cap)', stroke: V('rg-steel-4'), 'stroke-width': .6 }, g); el('line', { x1: x - (r || 3.4) * .65, y1: y + (r || 3.4) * .35, x2: x + (r || 3.4) * .65, y2: y - (r || 3.4) * .35, stroke: V('rg-steel-4'), 'stroke-width': .9 }, g); };
+
+  /* power supply */
   const psu = el('g', null, svg);
-  el('rect', { x: 40, y: 270, width: 240, height: 250, rx: 14, fill: 'url(#or-case)', stroke: C.slate2, 'stroke-width': 1.6, filter: 'url(#or-sh)' }, psu);
-  T(psu, 160, 296, 'DC SUPPLY · 0–10 V', { 'text-anchor': 'middle', 'font-size': 12.5, 'font-weight': 700, fill: C.slate2, 'letter-spacing': '.08em' });
-  el('rect', { x: 62, y: 308, width: 128, height: 56, rx: 6, fill: '#1f2633' }, psu);
-  const lcd = T(psu, 126, 346, '', { 'text-anchor': 'middle', 'font-size': 30, 'font-weight': 600, fill: '#7ee0b5', 'font-family': F_HEAD });
-  const led = el('circle', { cx: 228, cy: 318, r: 7, fill: '#5b6574', stroke: C.slate2 }, psu);
-  T(psu, 228, 346, 'ON', { 'text-anchor': 'middle', 'font-size': 11, fill: C.muted, 'font-weight': 700 });
+  el('rect', { x: 40, y: 270, width: 240, height: 250, rx: 16, fill: 'url(#or-case)', stroke: V('rg-case-edge'), 'stroke-width': 1.2, filter: 'url(#or-sh)' }, psu);
+  el('rect', { x: 40, y: 270, width: 240, height: 250, rx: 16, fill: 'url(#or-grain)', opacity: .4 }, psu);
+  el('rect', { x: 40.6, y: 270.6, width: 238.8, height: 248.8, rx: 15.4, fill: 'url(#or-caseEdge)' }, psu);
+  el('rect', { x: 50, y: 280, width: 220, height: 230, rx: 10, fill: 'url(#or-bake)', stroke: V('rg-bake-edge'), 'stroke-width': 1 }, psu);
+  el('rect', { x: 50.5, y: 280.5, width: 219, height: 2, rx: 1, fill: raw('#ffffff'), opacity: .08 }, psu);
+  [[58, 288], [262, 288], [58, 502], [262, 502]].forEach(([x, y]) => screw(psu, x, y, 2.8));
+  T(psu, 66, 293, 'DC POWER SUPPLY', { 'font-size': 9.5, 'font-weight': 700, fill: raw('#c9d3d0'), 'letter-spacing': '.12em', 'font-family': F_HEAD });
+  T(psu, 254, 293, '0–10 V', { 'font-size': 9.5, 'font-weight': 600, fill: raw('#8f9b98'), 'text-anchor': 'end', 'font-family': F_HEAD });
+  /* seven-segment display behind a tinted window */
+  el('rect', { x: 60, y: 300, width: 140, height: 58, rx: 6, fill: raw('#05090a'), stroke: raw('#000000'), 'stroke-width': 1 }, psu);
+  el('rect', { x: 63, y: 303, width: 134, height: 52, rx: 4, fill: 'url(#or-lcd)' }, psu);
+  const SEG = { a: [[3, 0], [19, 0], [16, 3.6], [6, 3.6]], b: [[19.6, .6], [19.6, 17.4], [16, 15.4], [16, 4]], c: [[19.6, 20.6], [19.6, 37.4], [16, 34], [16, 22.6]], d: [[3, 38], [19, 38], [16, 34.4], [6, 34.4]], e: [[.4, 20.6], [4, 22.6], [4, 34], [.4, 37.4]], f: [[.4, .6], [4, 4], [4, 15.4], [.4, 17.4]], g: [[1.4, 19], [4.6, 17], [15.4, 17], [18.6, 19], [15.4, 21], [4.6, 21]] };
+  const DIG = { 0: 'abcdef', 1: 'bc', 2: 'abdeg', 3: 'abcdg', 4: 'bcfg', 5: 'acdfg', 6: 'acdefg', 7: 'abc', 8: 'abcdefg', 9: 'abcdfg', ' ': '' };
+  const lcdG = el('g', { transform: 'translate(0 0)' }, psu), digits = [];
+  [76, 104, 140].forEach(x0 => {
+    const g = el('g', { transform: `translate(${x0} 310) skewX(-7)` }, lcdG), segs = {};
+    for (const k in SEG) segs[k] = el('polygon', { points: SEG[k].map(p => p.join(',')).join(' '), fill: V('rg-lcd-ghost') }, g);
+    digits.push(segs);
+  });
+  const dp = el('circle', { cx: 132, cy: 346, r: 2.6, fill: V('rg-lcd-ghost') }, lcdG);
+  T(psu, 178, 349, 'V', { 'font-size': 13, 'font-weight': 700, fill: V('rg-lcd-ghost'), 'font-family': F_HEAD });
+  const lcdUnit = psu.lastChild;
+  const led = el('circle', { cx: 188, cy: 311, r: 3.4, fill: 'url(#or-ledOff)' }, psu);
+  T(psu, 188, 324, 'OUT', { 'font-size': 6.5, 'font-weight': 700, fill: raw('#6f7b78'), 'text-anchor': 'middle', 'font-family': F_HEAD });
+  function setLCD(on, v) {
+    const s = v.toFixed(1).padStart(4, ' '), ch = [s[0], s[1], s[3]];
+    digits.forEach((segs, i) => { const lit = on ? DIG[ch[i]] : ''; for (const k in segs) segs[k].setAttribute('fill', lit.includes(k) ? V('rg-lcd-on') : V('rg-lcd-ghost')); });
+    dp.setAttribute('fill', on ? V('rg-lcd-on') : V('rg-lcd-ghost')); lcdUnit.setAttribute('fill', on ? V('rg-lcd-on') : V('rg-lcd-ghost'));
+    lcdG.setAttribute('filter', on ? 'url(#or-glow)' : 'none');
+    led.setAttribute('fill', on ? 'url(#or-ledOn)' : 'url(#or-ledOff)');
+  }
+  /* voltage knob with a printed dial; it turns with the setting */
+  const KX = 238, KY = 326;
+  for (let k = 0; k <= 10; k++) { const a = (-135 + 27 * k) * Math.PI / 180, r1 = 25, r2 = k % 5 ? 28 : 30; el('line', { x1: KX + Math.sin(a) * r1, y1: KY - Math.cos(a) * r1, x2: KX + Math.sin(a) * r2, y2: KY - Math.cos(a) * r2, stroke: raw('#aab5b2'), 'stroke-width': k % 5 ? .8 : 1.2 }, psu); }
+  el('circle', { cx: KX, cy: KY + 2, r: 21, fill: raw('#000000'), opacity: .45, filter: 'url(#or-blur)' }, psu);
+  el('circle', { cx: KX, cy: KY, r: 20, fill: 'url(#or-knob)' }, psu);
+  el('circle', { cx: KX, cy: KY, r: 18.6, fill: 'none', stroke: raw('#0b0e0d'), 'stroke-width': 2.8, 'stroke-dasharray': '1.1 1.5', opacity: .9 }, psu);
+  el('circle', { cx: KX, cy: KY, r: 14, fill: 'url(#or-cap)', opacity: .35 }, psu);
+  const knobI = el('line', { x1: KX, y1: KY - 6, x2: KX, y2: KY - 16, stroke: raw('#f2f5f4'), 'stroke-width': 2.2, 'stroke-linecap': 'round' }, psu);
+  /* toggle switch with a chrome bat handle */
   const sw = el('g', { class: 'live kfocus', tabindex: 0, role: 'switch', 'aria-label': 'Supply switch', 'aria-checked': 'false' }, psu);
-  el('rect', { x: 200, y: 360, width: 58, height: 30, rx: 15, fill: '#d6dbe1', stroke: C.slate2 }, sw);
-  const swK = el('circle', { cx: 216, cy: 375, r: 11, fill: '#fff', stroke: C.slate2 }, sw);
-  el('rect', { class: 'focus-ring', x: 195, y: 355, width: 68, height: 40, rx: 20, fill: 'none', stroke: C.acc, 'stroke-width': 2 }, sw);
-  const mkBtn = (x, lab, dir) => { const b = el('g', { class: 'live sbtn kfocus', tabindex: 0, role: 'button', 'aria-label': dir > 0 ? 'Raise the supply voltage' : 'Lower the supply voltage' }, psu); el('rect', { class: 'sbtn-face', x, y: 378, width: 46, height: 30, rx: 6, fill: '#fff', stroke: C.slate2 }, b); T(b, x + 23, 398, lab, { 'text-anchor': 'middle', 'font-size': 15, 'font-weight': 700 }); el('rect', { class: 'focus-ring', x: x - 4, y: 374, width: 54, height: 38, rx: 8, fill: 'none', stroke: C.acc, 'stroke-width': 2 }, b); return b; };
+  el('rect', { x: 200, y: 360, width: 58, height: 32, rx: 7, fill: raw('#151a19'), stroke: raw('#000000') }, sw);
+  T(sw, 210, 380, 'O', { 'font-size': 9, 'font-weight': 700, fill: raw('#8f9b98'), 'text-anchor': 'middle', 'font-family': F_HEAD });
+  T(sw, 248, 380, 'I', { 'font-size': 9, 'font-weight': 700, fill: raw('#8f9b98'), 'text-anchor': 'middle', 'font-family': F_HEAD });
+  el('circle', { cx: 229, cy: 376, r: 8, fill: 'url(#or-cap)', stroke: raw('#2a302f'), 'stroke-width': .8 }, sw);
+  const lever = el('g', { transform: 'rotate(-38 229 376)' }, sw);
+  el('path', { d: 'M226.6 376 L225.4 357 Q229 353.5 232.6 357 L231.4 376 Z', fill: 'url(#or-steel)', stroke: raw('#59656a'), 'stroke-width': .5 }, lever);
+  el('ellipse', { cx: 229, cy: 357.5, rx: 3.8, ry: 2.6, fill: 'url(#or-cap)' }, lever);
+  el('rect', { class: 'focus-ring', x: 195, y: 350, width: 68, height: 46, rx: 9, fill: 'none', stroke: C.acc, 'stroke-width': 2 }, sw);
+  const swK = { set: on => lever.setAttribute('transform', `rotate(${on ? 38 : -38} 229 376)`) };
+  /* step buttons */
+  const mkBtn = (x, lab, dir) => {
+    const b = el('g', { class: 'live sbtn kfocus', tabindex: 0, role: 'button', 'aria-label': dir > 0 ? 'Raise the supply voltage' : 'Lower the supply voltage' }, psu);
+    el('rect', { x, y: 380, width: 46, height: 30, rx: 7, fill: raw('#0b0e0d') }, b);
+    el('rect', { class: 'sbtn-face', x: x + 1.5, y: 380.5, width: 43, height: 26.5, rx: 6, fill: 'url(#or-steelv)' }, b);
+    T(b, x + 23, 399, lab, { 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: raw('#2b3331') });
+    el('rect', { class: 'focus-ring', x: x - 4, y: 375, width: 54, height: 40, rx: 9, fill: 'none', stroke: C.acc, 'stroke-width': 2 }, b);
+    return b;
+  };
   const bDn = mkBtn(66, '▼', -1), bUp = mkBtn(124, '▲', 1);
-  T(psu, 160, 436, 'output', { 'text-anchor': 'middle', 'font-size': 12, fill: C.muted });
-  // meters
+  T(psu, 118, 424, 'SET VOLTAGE', { 'text-anchor': 'middle', 'font-size': 7.5, 'font-weight': 700, fill: raw('#8f9b98'), 'letter-spacing': '.12em', 'font-family': F_HEAD });
+  el('rect', { x: 64, y: 436, width: 192, height: 64, rx: 8, fill: raw('#0f1312'), opacity: .55 }, psu);
+  T(psu, 160, 449, 'OUTPUT', { 'text-anchor': 'middle', 'font-size': 7.5, 'font-weight': 700, fill: raw('#8f9b98'), 'letter-spacing': '.14em', 'font-family': F_HEAD });
+  el('circle', { cx: 160, cy: 472, r: 7, fill: raw('#2f8f4e'), stroke: raw('#0b0e0d') }, psu); el('circle', { cx: 160, cy: 472, r: 2.2, fill: raw('#0b0e0d') }, psu);
+
+  /* moving-coil meters: bakelite case, cream face with mirror strip, knife-edge needle, glass, zero screw */
   function meter(x, y, unit, max, step, minor, lab) {
-    const g = el('g', null, svg), cx = x + 125, cy = y + 150, R = 108;
-    el('rect', { x, y, width: 250, height: 210, rx: 14, fill: 'url(#or-case)', stroke: C.slate2, 'stroke-width': 1.6, filter: 'url(#or-sh)' }, g);
-    el('path', { d: `M${x + 14} ${y + 14} H${x + 236} V${y + 166} H${x + 14} Z`, fill: '#fffdf7', stroke: '#d9d2bd' }, g);
+    const g = el('g', null, svg), cx = x + 125, cy = y + 150, R = 104;
+    el('rect', { x, y, width: 250, height: 210, rx: 14, fill: 'url(#or-bake)', stroke: V('rg-bake-edge'), 'stroke-width': 1.2, filter: 'url(#or-sh)' }, g);
+    el('rect', { x: x + .6, y: y + .6, width: 248.8, height: 208.8, rx: 13.4, fill: 'url(#or-caseEdge)' }, g);
+    el('rect', { x: x + 10, y: y + 10, width: 230, height: 166, rx: 7, fill: raw('#0b0f0e') }, g);
+    el('rect', { x: x + 13, y: y + 13, width: 224, height: 160, rx: 5, fill: 'url(#or-face)' }, g);
+    /* printed arcs, mirror band, graduations */
+    const P = (a, r) => [cx + Math.sin(a * Math.PI / 180) * r, cy - Math.cos(a * Math.PI / 180) * r];
+    const arc = (r) => { const [x1, y1] = P(-50, r), [x2, y2] = P(50, r); return `M${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2}`; };
+    el('path', { d: arc(R - 23), fill: 'none', stroke: 'url(#or-mirror)', 'stroke-width': 7 }, g);
+    el('path', { d: arc(R - 19.2), fill: 'none', stroke: V('rg-print'), 'stroke-width': .5, opacity: .6 }, g);
+    el('path', { d: arc(R - 26.8), fill: 'none', stroke: V('rg-print'), 'stroke-width': .5, opacity: .6 }, g);
+    el('path', { d: arc(R), fill: 'none', stroke: V('rg-print'), 'stroke-width': 1.1 }, g);
     for (let k = 0; k <= max / minor + 1e-9; k++) {
-      const v = k * minor, a = (-50 + 100 * v / max) * Math.PI / 180, major = Math.abs(v / step - Math.round(v / step)) < 1e-6;
-      const r1 = R - (major ? 14 : (k % 5 === 0 ? 10 : 6));
-      el('line', { x1: cx + Math.sin(a) * r1, y1: cy - Math.cos(a) * r1, x2: cx + Math.sin(a) * R, y2: cy - Math.cos(a) * R, stroke: C.ink, 'stroke-width': major ? 1.4 : .8 }, g);
-      if (major) T(g, cx + Math.sin(a) * (R - 26), cy - Math.cos(a) * (R - 26) + 5, String(+v.toFixed(2)), { 'text-anchor': 'middle', 'font-size': 12.5, fill: C.ink, 'font-weight': 600 });
+      const v = k * minor, a = -50 + 100 * v / max, major = Math.abs(v / step - Math.round(v / step)) < 1e-6, half = !major && k % 5 === 0;
+      const [x1, y1] = P(a, R - (major ? 13 : half ? 9 : 5.5)), [x2, y2] = P(a, R);
+      el('line', { x1, y1, x2, y2, stroke: V('rg-print'), 'stroke-width': major ? 1.3 : half ? .9 : .6 }, g);
+      if (major) { const [tx, ty] = P(a, R + 11); T(g, tx, ty + 4, String(+v.toFixed(2)), { 'text-anchor': 'middle', 'font-size': 11.5, fill: V('rg-print'), 'font-weight': 700, 'font-family': F_HEAD }); }
     }
-    el('path', { d: `M${cx + Math.sin(-50 * Math.PI / 180) * R} ${cy - Math.cos(-50 * Math.PI / 180) * R} A ${R} ${R} 0 0 1 ${cx + Math.sin(50 * Math.PI / 180) * R} ${cy - Math.cos(50 * Math.PI / 180) * R}`, fill: 'none', stroke: C.ink, 'stroke-width': 1.2 }, g);
-    T(g, cx, cy - 34, unit, { 'text-anchor': 'middle', 'font-size': 18, 'font-weight': 700, fill: lab === 'A' ? C.acc2 : C.aqua2, 'font-family': F_HEAD });
-    const needle = el('line', { x1: cx, y1: cy, x2: cx, y2: cy - R + 4, stroke: C.acc, 'stroke-width': 2, 'stroke-linecap': 'round', transform: `rotate(-50 ${cx} ${cy})` }, g);
-    el('circle', { cx, cy, r: 7, fill: C.slate2 }, g);
-    T(g, x + 125, y + 200, lab === 'A' ? 'AMMETER' : 'VOLTMETER', { 'text-anchor': 'middle', 'font-size': 11.5, 'font-weight': 700, fill: C.slate2, 'letter-spacing': '.08em' });
-    return { g, cx, cy, needle, max, cur: 0, target: 0, box: [x - 6, y - 6, 262, 222], dial: [x + 10, y + 10, 230, 160] };
+    T(g, cx, cy - 46, unit, { 'text-anchor': 'middle', 'font-size': 20, 'font-weight': 800, fill: V('rg-print'), 'font-family': F_HEAD });
+    T(g, cx, cy - 31, 'DC', { 'text-anchor': 'middle', 'font-size': 8, 'font-weight': 700, fill: V('rg-print'), opacity: .7, 'letter-spacing': '.12em' });
+    T(g, x + 26, y + 164, lab === 'A' ? 'AMMETER' : 'VOLTMETER', { 'font-size': 7.5, 'font-weight': 700, fill: V('rg-print'), opacity: .75, 'letter-spacing': '.14em', 'font-family': F_HEAD });
+    T(g, x + 224, y + 164, '1.5', { 'font-size': 8, 'font-weight': 700, fill: V('rg-print'), opacity: .75, 'text-anchor': 'end' });
+    el('path', { d: `M${x + 202} ${y + 158} h7 M${x + 205.5} ${y + 154.5} v7`, stroke: V('rg-print'), 'stroke-width': .7, opacity: .0 }, g);
+    /* knife-edge needle with counterweight tail and pivot cap */
+    const needle = el('g', { transform: `rotate(-50 ${cx} ${cy})` }, g);
+    el('path', { d: `M${cx - 1.6} ${cy + 16} L${cx - 1.3} ${cy - 30} L${cx - .35} ${cy - R + 3} L${cx + .35} ${cy - R + 3} L${cx + 1.3} ${cy - 30} L${cx + 1.6} ${cy + 16} Z`, fill: raw('#111414') }, needle);
+    el('path', { d: `M${cx - .25} ${cy - 30} L${cx - .1} ${cy - R + 3} L${cx + .1} ${cy - R + 3} L${cx + .25} ${cy - 30} Z`, fill: raw('#c0392b') }, needle);
+    el('rect', { x: cx - 4.5, y: cy + 12, width: 9, height: 7, rx: 1.5, fill: raw('#2b3130') }, needle);
+    el('circle', { cx, cy, r: 9, fill: raw('#1d2221') }, g);
+    el('circle', { cx, cy, r: 6.5, fill: 'url(#or-cap)' }, g);
+    /* glass window with a soft glare */
+    el('rect', { x: x + 13, y: y + 13, width: 224, height: 160, rx: 5, fill: 'url(#or-glare)', 'pointer-events': 'none' }, g);
+    el('rect', { x: x + 13.5, y: y + 13.5, width: 223, height: 1.4, rx: .7, fill: raw('#ffffff'), opacity: .5 }, g);
+    /* zero-adjust screw */
+    el('circle', { cx, cy: y + 192, r: 7.5, fill: raw('#0d1110') }, g);
+    el('circle', { cx, cy: y + 192, r: 6, fill: 'url(#or-cap)' }, g);
+    el('line', { x1: cx - 4, y1: y + 192, x2: cx + 4, y2: y + 192, stroke: raw('#3b4644'), 'stroke-width': 1.2, transform: `rotate(-20 ${cx} ${y + 192})` }, g);
+    return { g, cx, cy, needle, max, cur: 0, target: 0, box: [x - 6, y - 6, 262, 222], dial: [x + 10, y + 10, 230, 166] };
   }
   const AM = meter(320, 30, 'mA', 100, 20, 2, 'A'), VM = meter(620, 30, 'V', 10, 2, .2, 'V');
-  // breadboard and resistor
-  const bb = el('g', null, svg);
-  el('rect', { x: 380, y: 330, width: 560, height: 205, rx: 10, fill: 'url(#or-board)', stroke: '#d8d6cb', filter: 'url(#or-sh)' }, bb);
-  for (let r = 0; r < 6; r++) for (let c = 0; c < 34; c++) el('rect', { x: 398 + c * 16, y: 352 + r * 16 + (r > 2 ? 72 : 0), width: 5, height: 5, rx: 1, fill: '#cfccbf' }, bb);
-  el('line', { x1: 520, y1: 440, x2: 800, y2: 440, stroke: '#9aa3b0', 'stroke-width': 2.4 }, bb);
-  el('rect', { x: 610, y: 426, width: 100, height: 28, rx: 11, fill: 'url(#or-res)', stroke: '#b89a6a' }, bb);
-  [[628, '#7a4b26'], [644, '#1c2230'], [660, '#7a4b26'], [690, '#c8a24a']].forEach(([x, c]) => el('rect', { x, y: 426, width: 7, height: 28, fill: c }, bb));
-  const rLabG = el('g', null, bb);
-  el('rect', { x: 586, y: 380, width: 148, height: 28, rx: 5, fill: '#fff', stroke: C.line2 }, rLabG);
-  const rLab = T(rLabG, 660, 399, 'labelled 100 Ω', { 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: C.ink });
-  el('rect', { x: 516, y: 464, width: 288, height: 24, rx: 4, fill: '#fbfbf8' }, bb);
-  T(bb, 660, 481, 'brown · black · brown · gold = 10 × 10¹ Ω ± 5 %', { 'text-anchor': 'middle', 'font-size': 12, fill: C.muted });
-  T(bb, 400, 522, 'BREADBOARD', { 'font-size': 11.5, 'font-weight': 700, fill: C.slate3, 'letter-spacing': '.08em' });
-  // wires and terminals
+
+  /* breadboard with real holes; the resistor sits in row b, the two posts share its columns in row e */
+  const bb = el('g', null, svg), COLX = k => 394 + 14 * k;
+  el('rect', { x: 380, y: 330, width: 560, height: 205, rx: 9, fill: 'url(#or-board)', stroke: V('rg-board-edge'), filter: 'url(#or-sh)' }, bb);
+  el('rect', { x: 380, y: 330, width: 560, height: 205, rx: 9, fill: 'url(#or-grain)', opacity: .35 }, bb);
+  el('rect', { x: 384, y: 448, width: 552, height: 10, rx: 2, fill: V('rg-board-2'), stroke: V('rg-board-edge'), 'stroke-width': .6 }, bb);
+  el('line', { x1: 392, y1: 339.5, x2: 928, y2: 339.5, stroke: V('rg-rail-r'), 'stroke-width': 1.2 }, bb);
+  el('line', { x1: 392, y1: 365.5, x2: 928, y2: 365.5, stroke: V('rg-rail-b'), 'stroke-width': 1.2 }, bb);
+  T(bb, 386, 343, '+', { 'font-size': 9, 'font-weight': 800, fill: V('rg-rail-r') }); T(bb, 386, 369, '−', { 'font-size': 9, 'font-weight': 800, fill: V('rg-rail-b') });
+  const hole = (x, y) => { el('rect', { x: x - 2.2, y: y - 2.2, width: 4.4, height: 4.4, rx: .7, fill: V('rg-hole') }, bb); el('rect', { x: x - 1.1, y: y - .2, width: 2.2, height: 1.2, fill: raw('#9a9384'), opacity: .55 }, bb); };
+  for (let k = 0; k <= 38; k++) {
+    const x = COLX(k); if (k % 6 !== 5) { hole(x, 347); hole(x, 358); }
+    [384, 398, 412, 426, 440, 466, 480, 494, 508, 522].forEach(y => hole(x, y));
+    if (k % 5 === 0) T(bb, x, 377, String(k + 1), { 'font-size': 6, fill: V('rg-print'), opacity: .55, 'text-anchor': 'middle' });
+  }
+  'abcde'.split('').forEach((c, i) => T(bb, 386, 386 + 14 * i, c, { 'font-size': 6, fill: V('rg-print'), opacity: .55, 'text-anchor': 'middle' }));
+  'fghij'.split('').forEach((c, i) => T(bb, 386, 468 + 14 * i, c, { 'font-size': 6, fill: V('rg-print'), opacity: .55, 'text-anchor': 'middle' }));
+  /* carbon-film resistor: tan body, end caps, brown-black-brown-gold bands, tinned leads into row b */
+  const RX1 = COLX(11), RX2 = COLX(27), RY = 398;
+  el('path', { d: `M${RX1} ${RY} V${RY - 6} Q${RX1} ${RY - 9} ${RX1 + 3} ${RY - 9} H${RX2 - 3} Q${RX2} ${RY - 9} ${RX2} ${RY - 6} V${RY}`, fill: 'none', stroke: 'url(#or-steelv)', 'stroke-width': 2.2, 'stroke-linecap': 'round' }, bb);
+  el('ellipse', { cx: 660, cy: RY - 3, rx: 54, ry: 4, fill: raw('#06100d'), opacity: .16, filter: 'url(#or-blur)' }, bb);
+  el('path', { d: `M612 ${RY - 21} Q604 ${RY - 21} 604 ${RY - 9} Q604 ${RY + 3} 612 ${RY + 3} Q618 ${RY + 3} 622 ${RY - 1} L698 ${RY - 1} Q702 ${RY + 3} 708 ${RY + 3} Q716 ${RY + 3} 716 ${RY - 9} Q716 ${RY - 21} 708 ${RY - 21} Q702 ${RY - 21} 698 ${RY - 17} L622 ${RY - 17} Q618 ${RY - 21} 612 ${RY - 21} Z`, fill: 'url(#or-res)', stroke: V('rg-res-3'), 'stroke-width': .8 }, bb);
+  [[618, raw('#6b3a1c'), 7, 24], [640, raw('#151515'), 7, 16], [656, raw('#6b3a1c'), 7, 16], [692, raw('#c9a24a'), 6, 24]].forEach(([x, c, w, h]) => el('rect', { x, y: RY - 9 - h / 2, width: w, height: h, fill: c }, bb));
+  el('path', { d: `M608 ${RY - 15} Q660 ${RY - 19} 712 ${RY - 15}`, fill: 'none', stroke: raw('#ffffff'), 'stroke-width': 1.6, opacity: .45, 'stroke-linecap': 'round' }, bb);
+  /* the two posts share the resistor's columns, so they connect to its leads through the board */
+  [RX1, RX2].forEach(x => { el('line', { x1: x, y1: RY + 2, x2: x, y2: 438, stroke: V('rg-rail-b'), 'stroke-width': 1.1, 'stroke-dasharray': '1.5 2.5', opacity: .55 }, bb); });
+  const rLabG = el('g', null, svg);
+  el('rect', { x: 586, y: 296, width: 148, height: 26, rx: 13, fill: V('rg-tag-bg'), stroke: V('rg-tag-line'), filter: 'url(#or-sh2)' }, rLabG);
+  const rLab = T(rLabG, 660, 313.5, 'labelled 100 Ω', { 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 700, fill: V('rg-tag-ink') });
+  el('line', { x1: 660, y1: 322, x2: 660, y2: RY - 22, stroke: C.slate3, 'stroke-dasharray': '2 3' }, rLabG);
+  T(bb, 400, 530, 'BREADBOARD', { 'font-size': 8, 'font-weight': 700, fill: V('rg-print'), opacity: .45, 'letter-spacing': '.14em' });
+
+  /* cables, terminals and plugs */
   const wireG = el('g', null, svg), tmp = el('path', { d: '', fill: 'none', stroke: C.acc, 'stroke-width': 4, 'stroke-dasharray': '6 5', 'stroke-linecap': 'round', 'pointer-events': 'none' }, svg);
-  const termG = el('g', null, svg);
+  const termG = el('g', null, svg), plugG = el('g', { 'pointer-events': 'none' }, svg);
   KEYS.forEach(k => {
     const t = TERMS[k], g = el('g', { class: 'term-pt live kfocus', 'data-t': k, tabindex: 0, role: 'button', 'aria-label': `Terminal: ${t.nm}` }, termG);
-    el('circle', { cx: t.x, cy: t.y, r: 15, fill: 'transparent' }, g);
-    el('circle', { cx: t.x, cy: t.y, r: 11, fill: t.col, stroke: '#fff', 'stroke-width': 2.5 }, g);
-    el('circle', { cx: t.x, cy: t.y, r: 4, fill: '#e9edf1' }, g);
+    const red = k[1] === '+', brass = k[0] === 'R';
+    el('circle', { cx: t.x, cy: t.y, r: 16, fill: 'transparent' }, g);
+    el('circle', { cx: t.x, cy: t.y + 1.5, r: 12, fill: raw('#000000'), opacity: .3, filter: 'url(#or-blur)' }, g);
+    el('polygon', { points: [0, 1, 2, 3, 4, 5].map(i => { const a = Math.PI / 3 * i + Math.PI / 6; return `${(t.x + Math.cos(a) * 12.5).toFixed(1)},${(t.y + Math.sin(a) * 12.5).toFixed(1)}`; }).join(' '), fill: 'url(#or-steelv)', stroke: V('rg-steel-4'), 'stroke-width': .6 }, g);
+    el('circle', { cx: t.x, cy: t.y, r: 9.5, fill: brass ? 'url(#or-brass)' : red ? 'url(#or-pinR)' : 'url(#or-pinK)' }, g);
+    el('circle', { cx: t.x, cy: t.y, r: 3.6, fill: raw('#0b0d0d') }, g);
+    el('circle', { cx: t.x - .8, cy: t.y - .8, r: 1.4, fill: 'url(#or-cap)', opacity: .8 }, g);
     t.ring = el('circle', { cx: t.x, cy: t.y, r: 17, fill: 'none', stroke: C.acc, 'stroke-width': 2.5, opacity: 0 }, g);
     el('circle', { class: 'focus-ring', cx: t.x, cy: t.y, r: 20, fill: 'none', stroke: C.acc, 'stroke-width': 2 }, g);
     const lab = k[1] === '+' ? '+' : k[1] === '-' ? '−' : '';
-    if (lab) T(g, t.x, t.y + (t.y < 300 ? -18 : 32), lab, { 'text-anchor': 'middle', 'font-size': 17, 'font-weight': 800, fill: t.col });
+    if (lab) T(g, t.x, t.y + (t.y < 300 ? -16 : 31), lab, { 'text-anchor': 'middle', 'font-size': 15, 'font-weight': 800, fill: red ? raw('#d8443a') : V('rg-print'), style: (t.y < 300 || red) ? '' : 'fill:var(--rg-tag-ink)' });
     t.g = g;
   });
 
   function wirePath(a, b) {
-    const A = TERMS[a], B = TERMS[b], d = Math.hypot(B.x - A.x, B.y - A.y), sag = 40 + d * .18;
-    return `M${A.x} ${A.y} C${A.x} ${A.y + sag} ${B.x} ${B.y + sag} ${B.x} ${B.y}`;
+    const A = TERMS[a], B = TERMS[b], d = Math.hypot(B.x - A.x, B.y - A.y), sag = 46 + d * .2;
+    return `M${A.x} ${A.y + 20} C${A.x} ${A.y + 20 + sag} ${B.x} ${B.y + 20 + sag} ${B.x} ${B.y + 20}`;
+  }
+  const isRed = w => w.a[1] === '+' || w.b[1] === '+';
+  function plug(x, y, red) {
+    const g = el('g', null, plugG);
+    el('rect', { x: x - 5.5, y: y - 2, width: 11, height: 24, rx: 3, fill: red ? 'url(#or-plugR)' : 'url(#or-plugK)' }, g);
+    for (let k = 0; k < 4; k++) el('rect', { x: x - 5.5, y: y + 8 + k * 3.4, width: 11, height: 1.2, fill: raw('#000000'), opacity: .25 }, g);
+    el('circle', { cx: x, cy: y, r: 8.2, fill: red ? 'url(#or-pinR)' : 'url(#or-pinK)', stroke: raw('#000000'), 'stroke-opacity': .35, 'stroke-width': .8 }, g);
+    el('circle', { cx: x, cy: y, r: 3.2, fill: 'url(#or-cap)' }, g);
   }
   function drawWires() {
-    wireG.innerHTML = '';
+    wireG.innerHTML = ''; plugG.innerHTML = '';
     st.wires.forEach((w, i) => {
-      const g = el('g', { class: 'live wire', 'data-i': i }, wireG), d = wirePath(w.a, w.b);
+      const g = el('g', { class: 'live wire', 'data-i': i }, wireG), d = wirePath(w.a, w.b), red = isRed(w);
       el('path', { d, fill: 'none', stroke: 'transparent', 'stroke-width': 16 }, g);
-      el('path', { d, fill: 'none', stroke: w.col, 'stroke-width': 5, 'stroke-linecap': 'round' }, g);
-      el('path', { d, fill: 'none', stroke: '#fff', 'stroke-width': 1.2, 'stroke-linecap': 'round', opacity: .35 }, g);
-      w.el = g;
+      el('path', { d, fill: 'none', stroke: raw('#000000'), 'stroke-width': 7, 'stroke-linecap': 'round', opacity: .14, transform: 'translate(2 4)' }, g);
+      el('path', { d, fill: 'none', stroke: red ? raw('#7a1a14') : raw('#050606'), 'stroke-width': 6.4, 'stroke-linecap': 'round' }, g);
+      el('path', { d, fill: 'none', stroke: red ? raw('#cf3a2e') : raw('#2a302f'), 'stroke-width': 4.6, 'stroke-linecap': 'round' }, g);
+      el('path', { d, fill: 'none', stroke: raw('#ffffff'), 'stroke-width': 1.3, 'stroke-linecap': 'round', opacity: red ? .38 : .22, transform: 'translate(-1 -1)' }, g);
+      plug(TERMS[w.a].x, TERMS[w.a].y, red); plug(TERMS[w.b].x, TERMS[w.b].y, red);
+      w.col = red ? 'red' : 'black'; w.el = g;
     });
   }
 
@@ -173,9 +286,8 @@
     requestAnimationFrame(needles);
   })();
   function updStatus() {
-    lcd.textContent = st.on ? `${st.vset.toFixed(1)} V` : `${st.vset.toFixed(1)}`; lcd.setAttribute('fill', st.on ? '#7ee0b5' : '#5d7a6c');
-    led.setAttribute('fill', st.on ? '#3fd08a' : '#5b6574');
-    swK.setAttribute('cx', st.on ? 242 : 216); sw.setAttribute('aria-checked', st.on ? 'true' : 'false');
+    setLCD(st.on, st.vset); knobI.setAttribute('transform', `rotate(${-135 + 27 * st.vset} ${KX} ${KY})`);
+    swK.set(st.on); sw.setAttribute('aria-checked', st.on ? 'true' : 'false');
     $('ohm-vset').textContent = st.vset + ' V'; $('ohm-on').textContent = st.on ? 'Switch OFF' : 'Switch ON'; $('ohm-on').setAttribute('aria-pressed', st.on ? 'true' : 'false');
     $('ohm-vdn').disabled = st.vset <= 2; $('ohm-vup').disabled = st.vset >= 10;
     $('ohm-status').innerHTML = `Supply <b>${st.vset} V</b>, <b>${st.on ? 'ON' : 'OFF'}</b> · wires: <b>${st.wires.length}</b> · circuit: <b>${!st.on ? 'not tested' : st.ok ? 'correct' : 'fault'}</b> · rows recorded: <b>${st.rows.length} of 5</b>`;
@@ -186,7 +298,7 @@
   function addWire(a, b) {
     if (a === b) return false;
     if (st.wires.some(w => (w.a === a && w.b === b) || (w.a === b && w.b === a))) { say('Those two terminals are already joined.', 'warn'); return false; }
-    st.wires.push({ a, b, col: WCOL[st.wires.length % WCOL.length] }); drawWires(); evaluate(); return true;
+    st.wires.push({ a, b }); drawWires(); evaluate(); return true;
   }
   function removeWire(i) { st.wires.splice(i, 1); drawWires(); evaluate(); }
   const guard = f => () => { if (!tut.on) f(); };
@@ -428,7 +540,7 @@
     await Tt.teach('Wiring checked on switch-on', 'The bench checks the circuit as soon as the supply is on. A meter in the wrong place, such as an ammeter across the resistor, gives a warning that explains the fault.', { el: msg });
     await Tt.teach('Switch ON at 2 V', 'The supply starts at its lowest setting, 2 V, and is switched on.', { box: B([195, 355, 68, 40]), label: 'ON', ms: 2600 });
     setOn(true);
-    await Tt.teach('Circuit correct', 'The message confirms: ammeter in series, voltmeter across the resistor. Both needles move.', { el: msg, ms: 3400 });
+    await Tt.teach('Circuit correct', 'Both needles swing up and settle. The message under the bench confirms: ammeter in series, voltmeter across the resistor.', { el: msg, ms: 3400, focus: [rig, msg], alt: B([320, 20, 560, 232]), label: 'needles move' });
     await reading(Tt, true);
     for (const v of [4, 6, 8, 10]) {
       await Tt.teach(`Supply to ${v} V`, `▲ raises the supply by 2 V, to ${v} V.`, { box: B([120, 374, 54, 38]), label: `${v} V`, ms: 2000 });
