@@ -21,11 +21,9 @@
     <div class="lab-tabs" id="lab-tabs" role="tablist" aria-label="Lab" data-at="0"><span class="lab-thumb" aria-hidden="true"></span><button type="button" class="lab-tab" role="tab" data-key="st" aria-selected="true"><span class="lt-n">8</span>Surface tension</button><button type="button" class="lab-tab" role="tab" data-key="ohm" aria-selected="false"><span class="lt-n">9</span>Ohm's law</button></div>
     <div class="top-crumb" id="top-crumb"></div>
   </header>
-  <nav class="dots" id="rail-nav" aria-label="Pages of this lab"></nav>
-  <div id="rail-fill" class="rail-fill"></div><div id="rail-mark" class="rail-mark"></div>
-
+  <nav class="rail" id="rail-nav" aria-label="Sections of this lab"></nav>
+  
   <main class="stage">
-    <div class="stage-top"><button type="button" class="btn-prev" id="btn-prev" hidden>← Previous</button></div>
 
     <!-- ===================== LAB 8 · SURFACE TENSION ===================== -->
     <section class="view" id="view-st-practical" data-title="Practical" data-group="8 · Surface tension" data-lab="Surface tension">
@@ -36,10 +34,10 @@
           <p class="lede">A clean capillary tube is dipped into the liquid. The liquid climbs the bore and stops at a height <i>h</i>, read on a centimetre scale through a magnifier. Three fresh dips give three readings of <i>h</i>; their average gives the surface tension <i>γ</i>.</p>
           <button type="button" class="btn-tut" id="st-tut"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3.5 1.5v11l9-5.5z" fill="currentColor"/></svg>Start tutorial</button>
         </div>
-        <div class="rig-frame rig lock" id="st-rig-frame"><svg id="st-rig" viewBox="0 0 1000 620" role="img" aria-label="Beaker of liquid, capillary tube on a stand, centimetre scale and magnifier"></svg></div>
+        <div class="rig-frame rig tlock" id="st-rig-frame"><svg id="st-rig" viewBox="0 0 1000 620" role="img" aria-label="Beaker of liquid, capillary tube on a stand, centimetre scale and magnifier"></svg></div>
         <p class="rig-msg" id="st-msg" aria-live="polite"></p>
         <div class="prac-mid">
-          <div class="panel lock" id="st-ctl">
+          <div class="panel tlock" id="st-ctl">
             <h2 class="panel-h">Set-up</h2>
             <div class="ctl-row"><label for="st-liq">Liquid</label><select id="st-liq"><option value="water">Water</option><option value="soap">Soap solution</option><option value="ethanol">Ethanol</option></select></div>
             <div class="ctl-row"><label for="st-rad">Capillary</label><select id="st-rad"><option value="0.025">bore radius 0.025 cm</option><option value="0.05" selected>bore radius 0.05 cm</option><option value="0.10">bore radius 0.10 cm</option></select></div>
@@ -47,7 +45,7 @@
             <div class="ctl-btns"><button type="button" class="btn-quiet" id="st-rinse">Rinse with the liquid</button><button type="button" class="btn-main" id="st-dip">Dip the capillary</button><button type="button" class="btn-quiet" id="st-lift">Lift out</button></div>
             <p class="ctl-help small">The capillary can also be dragged down into the beaker and up out of it; with the capillary focused, ↑ and ↓ move it.</p>
           </div>
-          <div class="panel lock" id="st-rec">
+          <div class="panel tlock" id="st-rec">
             <h2 class="panel-h">Reading h</h2>
             <p class="ctl-help">In the magnifier, the scale is read level with the bottom of the curved meniscus, in cm to two decimal places. Zero on the scale is level with the liquid surface in the beaker.</p>
             <div class="rec-row"><input id="st-read" type="text" inputmode="decimal" autocomplete="off" placeholder="h in cm" aria-label="Reading of h in cm"><button type="button" class="btn-main" id="st-record">Record</button><button type="button" class="btn-quiet sm" id="st-undo">Delete last</button></div>
@@ -63,7 +61,7 @@
         <div class="prac-lower">
           <div class="panel" id="st-calc">
             <div class="panel-head"><h2 class="panel-h">Calculation</h2><span class="panel-tag">γ = h r ρ g ÷ (2 cos θ)</span></div>
-            <div class="calc-rows lock">
+            <div class="calc-rows tlock">
               <div class="cr" id="st-cr-h"><label for="st-in-h">Average height <span class="sym" tabindex="0" data-sym="h"><i>h</i></span> = (<span class="sym" tabindex="0" data-sym="h1"><i>h</i><sub>1</sub></span> + <span class="sym" tabindex="0" data-sym="h2"><i>h</i><sub>2</sub></span> + <span class="sym" tabindex="0" data-sym="h3"><i>h</i><sub>3</sub></span>) ÷ 3 <span class="u">cm</span></label><input id="st-in-h" type="text" inputmode="decimal" autocomplete="off"><div class="cr-work" id="st-w-h"></div></div>
               <div class="cr" id="st-cr-r"><label for="st-in-r">Radius of the bore <span class="sym" tabindex="0" data-sym="r"><i>r</i></span> <span class="u">cm</span></label><input id="st-in-r" type="text" inputmode="decimal" autocomplete="off"><div class="cr-sub">The radius is half the bore diameter.</div></div>
               <div class="cr" id="st-cr-rho"><label for="st-in-rho">Density of the liquid <span class="sym" tabindex="0" data-sym="rho"><i>ρ</i></span> <span class="u">g/cm³</span></label><input id="st-in-rho" type="text" inputmode="decimal" autocomplete="off"></div>
@@ -71,13 +69,12 @@
               <div class="cr" id="st-cr-th"><label for="st-in-th">Contact angle <span class="sym" tabindex="0" data-sym="th"><i>θ</i></span> <span class="u">degrees</span></label><input id="st-in-th" type="text" inputmode="decimal" autocomplete="off"></div>
               <div class="cr" id="st-cr-gam"><label for="st-in-gam">Surface tension <span class="sym" tabindex="0" data-sym="gam"><i>γ</i></span> = <span class="sym" tabindex="0" data-sym="hG"><i>h</i></span> <span class="sym" tabindex="0" data-sym="rG"><i>r</i></span> <span class="sym" tabindex="0" data-sym="rhoG"><i>ρ</i></span> <span class="sym" tabindex="0" data-sym="gG"><i>g</i></span> ÷ (2 cos <span class="sym" tabindex="0" data-sym="thG"><i>θ</i></span>) <span class="u">dyne/cm</span></label><input id="st-in-gam" type="text" inputmode="decimal" autocomplete="off"><div class="cr-work" id="st-w-gam"></div></div>
             </div>
-            <div class="calc-actions lock"><button type="button" class="btn-main" id="st-check">Check</button></div>
+            <div class="calc-actions tlock"><button type="button" class="btn-main" id="st-check">Check</button></div>
             <div class="check-msg" id="st-chk" aria-live="polite"></div>
             <div class="result-box" id="st-result" hidden></div>
           </div>
         </div>
-        <div class="prac-foot lock"><button type="button" class="btn-quiet" id="st-reset">Start over</button></div>
-        <div class="page-end"><button type="button" class="btn-next" data-next>Next: Aim and outcomes →</button></div>
+        <div class="prac-foot tlock"><button type="button" class="btn-quiet" id="st-reset">Start over</button></div>
       </div>
     </section>
 
@@ -105,7 +102,6 @@
           <svg id="st-lap-fig" viewBox="0 0 860 330" role="img" aria-label="Young–Laplace law in two connected alveoli of different size"></svg>
           <figcaption id="st-lap-cap"></figcaption>
         </figure>
-        <div class="page-end"><button type="button" class="btn-next" data-next>Next: Theory →</button></div>
       </div>
     </section>
 
@@ -177,7 +173,6 @@
           </div>
           <div class="side-note aqua"><div class="sn-k">Why surfactant matters</div><p>By ΔP = 2γ/r, a small alveolus with the same γ would have a higher pressure than a large one and would empty into it. Surfactant molecules crowd together as an alveolus shrinks, lowering γ most in the smallest alveoli. The pressures even out and the lung stays evenly inflated.</p></div>
         </div>
-        <div class="page-end"><button type="button" class="btn-next" data-next>Next: Method →</button></div>
       </div>
     </section>
 
@@ -215,7 +210,6 @@
           <li>Capillary tubes are thin glass and break easily; handle them gently and dispose of broken glass safely.</li>
           <li>Keep ethanol away from flames.</li>
         </ul></div>
-        <div class="page-end"><button type="button" class="btn-next" data-next>Next: Observation and calculation →</button></div>
       </div>
     </section>
 
@@ -246,7 +240,6 @@
           <div class="slip"><h3>Millimetres for h</h3><p>29.4 mm put in as 29.4 makes γ ten times too large. Convert to 2.94 cm first.</p></div>
           <div class="slip"><h3>g in m/s²</h3><p>With h and r in cm, g must be 980 cm/s², not 9.8.</p></div>
         </div>
-        <div class="page-end"><button type="button" class="btn-next" data-next>Next: MCQs →</button></div>
       </div>
     </section>
 
@@ -265,7 +258,6 @@
               <a role="menuitem" href="https://www.youtube.com/watch?v=YoF7RuBZIpM" target="_blank" rel="noopener">Experiment on capillary action using a capillary tube<small>YouTube · video</small></a>
             </div>
           </div>
-          <button type="button" class="btn-next" data-next>Next: Lab 9 · Ohm's law →</button>
         </div>
       </div>
     </section>
@@ -279,17 +271,17 @@
           <p class="lede">The supply, an ammeter, a voltmeter and an unknown resistor are wired on the bench. For each supply setting the meters give V and I; the I–V graph is a straight line whose slope S gives the resistance R = 1/S.</p>
           <button type="button" class="btn-tut" id="ohm-tut"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3.5 1.5v11l9-5.5z" fill="currentColor"/></svg>Start tutorial</button>
         </div>
-        <div class="rig-frame rig lock" id="ohm-rig-frame"><svg id="ohm-rig" viewBox="0 0 1000 600" role="img" aria-label="Power supply, ammeter, voltmeter and resistor on a breadboard, with terminals to wire"></svg></div>
+        <div class="rig-frame rig tlock" id="ohm-rig-frame"><svg id="ohm-rig" viewBox="0 0 1000 600" role="img" aria-label="Power supply, ammeter, voltmeter and resistor on a breadboard, with terminals to wire"></svg></div>
         <p class="rig-msg" id="ohm-msg" aria-live="polite"></p>
         <div class="prac-mid">
-          <div class="panel lock" id="ohm-ctl">
+          <div class="panel tlock" id="ohm-ctl">
             <h2 class="panel-h">Supply and wiring</h2>
             <div class="ctl-row"><label>Supply</label><button type="button" class="btn-quiet sm" id="ohm-vdn" aria-label="Lower the supply voltage">− 2 V</button><b id="ohm-vset" style="font:700 20px/1 var(--f-head);min-width:64px;text-align:center">2 V</b><button type="button" class="btn-quiet sm" id="ohm-vup" aria-label="Raise the supply voltage">+ 2 V</button><button type="button" class="btn-main" id="ohm-on" aria-pressed="false">Switch ON</button></div>
             <p class="ctl-help small">Wires: press on one terminal and drag to another, or tap one terminal and then another. Tap a wire to remove it.</p>
             <div class="ctl-btns"><button type="button" class="btn-quiet" id="ohm-clear">Clear wires</button></div>
             <p class="status" id="ohm-status"></p>
           </div>
-          <div class="panel lock" id="ohm-rec">
+          <div class="panel tlock" id="ohm-rec">
             <h2 class="panel-h">Readings</h2>
             <p class="ctl-help">With the circuit correct and the supply on, Record reads both meters into the table. One row for each supply setting: 2, 4, 6, 8 and 10 V.</p>
             <div class="rec-row"><button type="button" class="btn-main" id="ohm-record">Record</button><button type="button" class="btn-quiet sm" id="ohm-undo">Delete last</button></div>
@@ -305,25 +297,24 @@
         <div class="prac-lower">
           <div class="panel" id="ohm-graph-panel">
             <div class="panel-head"><h2 class="panel-h">I–V graph</h2><span class="panel-tag">drag the two handles onto the best straight line</span></div>
-            <div class="graph-wrap lock"><svg id="ohm-graph" viewBox="0 0 760 470" role="img" aria-label="Graph of current I against voltage V with a movable best-fit line"></svg></div>
-            <div class="graph-foot"><span class="g-read" id="ohm-gread" aria-live="polite"></span><button type="button" class="btn-quiet sm lock" id="ohm-greset">Reset line</button></div>
+            <div class="graph-wrap tlock"><svg id="ohm-graph" viewBox="0 0 760 470" role="img" aria-label="Graph of current I against voltage V with a movable best-fit line"></svg></div>
+            <div class="graph-foot"><span class="g-read" id="ohm-gread" aria-live="polite"></span><button type="button" class="btn-quiet sm tlock" id="ohm-greset">Reset line</button></div>
           </div>
           <div class="panel" id="ohm-calc">
             <div class="panel-head"><h2 class="panel-h">Calculation</h2><span class="panel-tag">R = 1 ÷ S</span></div>
-            <div class="calc-rows lock">
+            <div class="calc-rows tlock">
               <div class="cr" id="ohm-cr-S"><label for="ohm-in-S">Slope <span class="sym" tabindex="0" data-sym="S"><i>S</i></span> = (<span class="sym" tabindex="0" data-sym="y2"><i>y</i><sub>2</sub></span> − <span class="sym" tabindex="0" data-sym="y1"><i>y</i><sub>1</sub></span>) ÷ (<span class="sym" tabindex="0" data-sym="x2"><i>x</i><sub>2</sub></span> − <span class="sym" tabindex="0" data-sym="x1"><i>x</i><sub>1</sub></span>) <span class="u">A/V</span></label><input id="ohm-in-S" type="text" inputmode="decimal" autocomplete="off"><div class="cr-work" id="ohm-w-S"></div></div>
               <div class="cr" id="ohm-cr-RG"><label for="ohm-in-RG">Graphical resistance <span class="sym" tabindex="0" data-sym="RG"><i>R</i><sub>G</sub></span> = 1 ÷ <span class="sym" tabindex="0" data-sym="SG"><i>S</i></span> <span class="u">Ω</span></label><input id="ohm-in-RG" type="text" inputmode="decimal" autocomplete="off"><div class="cr-work" id="ohm-w-RG"></div></div>
               <div class="cr" id="ohm-cr-RE"><label for="ohm-in-RE">Experimental resistance <span class="sym" tabindex="0" data-sym="RE"><i>R</i><sub>E</sub></span> = mean of the <span class="sym" tabindex="0" data-sym="VI"><i>V</i>/<i>I</i></span> column <span class="u">Ω</span></label><input id="ohm-in-RE" type="text" inputmode="decimal" autocomplete="off"><div class="cr-work" id="ohm-w-RE"></div></div>
               <div class="cr" id="ohm-cr-RT"><label for="ohm-in-RT">Theoretical resistance <span class="sym" tabindex="0" data-sym="RT"><i>R</i><sub>T</sub></span>, the labelled value <span class="u">Ω</span></label><input id="ohm-in-RT" type="text" inputmode="decimal" autocomplete="off"></div>
               <div class="cr" id="ohm-cr-pe"><label for="ohm-in-pe">Percentage error <span class="sym" tabindex="0" data-sym="pe">% error</span> = |<span class="sym" tabindex="0" data-sym="RGp"><i>R</i><sub>G</sub></span> − <span class="sym" tabindex="0" data-sym="RTp"><i>R</i><sub>T</sub></span>| ÷ <span class="sym" tabindex="0" data-sym="RTp2"><i>R</i><sub>T</sub></span> × 100 <span class="u">%</span></label><input id="ohm-in-pe" type="text" inputmode="decimal" autocomplete="off"><div class="cr-work" id="ohm-w-pe"></div></div>
             </div>
-            <div class="calc-actions lock"><button type="button" class="btn-main" id="ohm-check">Check</button></div>
+            <div class="calc-actions tlock"><button type="button" class="btn-main" id="ohm-check">Check</button></div>
             <div class="check-msg" id="ohm-chk" aria-live="polite"></div>
             <div class="result-box" id="ohm-result" hidden></div>
           </div>
         </div>
-        <div class="prac-foot lock"><button type="button" class="btn-quiet" id="ohm-reset">Start over</button></div>
-        <div class="page-end"><button type="button" class="btn-next" data-next>Next: Aim and outcomes →</button></div>
+        <div class="prac-foot tlock"><button type="button" class="btn-quiet" id="ohm-reset">Start over</button></div>
       </div>
     </section>
 
@@ -350,7 +341,6 @@
           <svg id="ohm-dev-fig" viewBox="0 0 860 340" role="img" aria-label="Implantable cardiac devices and a pulmonary artery sensor in the chest"></svg>
           <figcaption id="ohm-dev-cap"></figcaption>
         </figure>
-        <div class="page-end"><button type="button" class="btn-next" data-next>Next: Theory →</button></div>
       </div>
     </section>
 
@@ -404,7 +394,6 @@
           </div>
           <div class="side-note"><div class="sn-k">Current through the body</div><p>≈ 1 mA: just felt<br>≈ 10 mA: muscles clamp, hard to let go<br>≈ 100 mA across the chest: ventricular fibrillation<br>Values for mains frequency, hand to hand, about one second.</p></div>
         </div>
-        <div class="page-end"><button type="button" class="btn-next" data-next>Next: Method →</button></div>
       </div>
     </section>
 
@@ -444,7 +433,6 @@
           <li>Never connect the ammeter directly across the supply or across the resistor.</li>
           <li>Keep to the low voltages of the bench supply and keep hands and bench dry.</li>
         </ul></div>
-        <div class="page-end"><button type="button" class="btn-next" data-next>Next: Observation and calculation →</button></div>
       </div>
     </section>
 
@@ -473,7 +461,6 @@
           <div class="slip"><h3>Supply setting instead of V</h3><p>The voltmeter reading, not the dial setting, is the voltage across the resistor.</p></div>
           <div class="slip"><h3>Points from the table for the slope</h3><p>The slope comes from two points on the best-fit line, far apart, not from two table rows.</p></div>
         </div>
-        <div class="page-end"><button type="button" class="btn-next" data-next>Next: MCQs →</button></div>
       </div>
     </section>
 

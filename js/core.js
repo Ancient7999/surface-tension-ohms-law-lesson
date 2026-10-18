@@ -118,40 +118,64 @@ window.SOL = (function () {
   const onEnter = {}, onLeave = {};
   let views = [], ids = [], items = [], current = -1, tabs = [];
   const keyOf = v => v.id.replace('view-', '').split('-')[0];
+  /* section rail: Practical is always open; every other section stays locked until it is opened */
+  const ICON = {
+    practical: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/>',
+    aim: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".8" fill="currentColor"/>',
+    theory: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/>',
+    method: '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.3"/><circle cx="4.5" cy="12" r="1.3"/><circle cx="4.5" cy="18" r="1.3"/>',
+    obs: '<rect x="3.5" y="4" width="17" height="16" rx="1.5"/><path d="M3.5 9.5h17M3.5 15h17M10 4v16"/>',
+    mcq: '<path d="M4 5h16v11H9l-5 4z"/><path d="M10 9a2 2 0 1 1 2.8 1.8c-.5.3-.8.7-.8 1.2"/><circle cx="12" cy="14" r=".6" fill="currentColor"/>'
+  };
+  const SHORT = { practical: 'Practical', aim: 'Aim', theory: 'Theory', method: 'Method', obs: 'Data', mcq: 'MCQs' };
+  const LOCK = '<svg class="ri-lock" viewBox="0 0 16 16" aria-hidden="true"><path class="shackle" d="M5 7V5a3 3 0 0 1 6 0v2"/><rect x="3.5" y="7" width="9" height="7" rx="1.5"/></svg>';
+  const secOf = v => v.id.replace('view-', '').split('-').slice(1).join('-');
+  const unlockKey = k => 'sol-unlocked-' + k;
+  function unlockedSet(k) { try { return new Set(JSON.parse(sessionStorage.getItem(unlockKey(k)) || '[]')); } catch (_) { return new Set(); } }
+  function isOpen(v) { const s = secOf(v); return s === 'practical' || unlockedSet(keyOf(v)).has(s); }
+  function unlock(v) {
+    const k = keyOf(v), set = unlockedSet(k); set.add(secOf(v));
+    try { sessionStorage.setItem(unlockKey(k), JSON.stringify([...set])); } catch (_) { /* storage unavailable: unlocked for this page view only */ }
+    memo.add(v.id);
+  }
+  const memo = new Set();
+  const open = v => isOpen(v) || memo.has(v.id);
+  function paintLocks() { items.forEach((b, j) => { const o = open(views[j]); b.classList.toggle('locked', !o); b.setAttribute('aria-label', views[j].dataset.title + (o ? '' : ' (locked: opens on click)')); }); }
   function nav() {
     views = Array.from(document.querySelectorAll('.view')); ids = views.map(v => v.id.replace('view-', ''));
-    const navEl = $('rail-nav'), counts = {};
+    const navEl = $('rail-nav');
     items = views.map((v, i) => {
-      const k = keyOf(v); counts[k] = (counts[k] || 0) + 1;
-      const b = document.createElement('button'); b.type = 'button'; b.className = 'dot'; b.dataset.key = k;
-      b.setAttribute('aria-label', v.dataset.title);
-      b.innerHTML = `<span class="dn">${counts[k]}</span><span class="dl">${v.dataset.title}</span>`;
-      b.addEventListener('click', () => goTo(i, true)); navEl.appendChild(b); return b;
+      const sec = secOf(v), b = document.createElement('button'); b.type = 'button'; b.className = 'ri ri-' + sec; b.dataset.key = keyOf(v); b.dataset.sec = sec;
+      b.innerHTML = `<span class="ri-ic"><svg viewBox="0 0 24 24" aria-hidden="true">${ICON[sec] || ''}</svg>${sec === 'practical' ? '' : LOCK}</span><span class="ri-l">${v.dataset.title}</span><span class="ri-s">${SHORT[sec] || v.dataset.title}</span><span class="ri-tip" aria-hidden="true">${v.dataset.title}</span>`;
+      b.addEventListener('click', () => {
+        if (open(v)) { goTo(i, true); return; }
+        if (b.classList.contains('unlocking')) return;
+        unlock(v); b.classList.add('unlocking');
+        setTimeout(() => { b.classList.remove('unlocking'); paintLocks(); goTo(i, true); }, reduced ? 0 : 520);
+      });
+      navEl.appendChild(b); return b;
     });
     tabs = Array.from(document.querySelectorAll('.lab-tab'));
     tabs.forEach(t => t.addEventListener('click', () => { const i = views.findIndex(v => keyOf(v) === t.dataset.key); if (keyOf(views[current]) !== t.dataset.key) goTo(i, true); }));
-    $('btn-prev').addEventListener('click', () => goTo(current - 1, true));
-    document.querySelectorAll('[data-next]').forEach(b => b.addEventListener('click', () => goTo(current + 1, true)));
     window.addEventListener('popstate', () => goTo(fromHash(), false));
     window.addEventListener('hashchange', () => goTo(fromHash(), false));
   }
   function goTo(i, push) {
     i = clamp(i, 0, views.length - 1);
     if (i === current) return;
+    if (!open(views[i])) unlock(views[i]); /* a direct link opens that one section only */
     if (current >= 0 && onLeave[ids[current]]) onLeave[ids[current]]();
     current = i;
-    const k = keyOf(views[i]), first = views.findIndex(v => keyOf(v) === k);
+    const k = keyOf(views[i]);
     views.forEach((v, j) => v.classList.toggle('active', j === i));
     items.forEach((b, j) => {
       b.hidden = b.dataset.key !== k;
-      b.classList.toggle('current', j === i); b.classList.toggle('done', j < i && b.dataset.key === k);
+      b.classList.toggle('current', j === i);
       if (j === i) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
     });
+    paintLocks();
     tabs.forEach((t, j) => { const on = t.dataset.key === k; t.setAttribute('aria-selected', on ? 'true' : 'false'); if (on) $('lab-tabs').dataset.at = String(j); });
-    const pos = i - first + 1, tot = items.filter(b => b.dataset.key === k).length;
     $('top-crumb').innerHTML = `${views[i].dataset.lab} · <b>${views[i].dataset.title}</b>`;
-    $('btn-prev').hidden = i === 0;
-    document.querySelector('.stage-top').style.maxWidth = views[i].querySelector('.sheet.wide') ? '1280px' : '';
     if (push && location.hash !== '#' + ids[i]) history.pushState(null, '', '#' + ids[i]);
     window.scrollTo({ top: 0 });
     document.title = views[i].dataset.title + ' · ' + views[i].dataset.lab;
