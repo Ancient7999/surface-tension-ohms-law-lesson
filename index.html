@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Surface tension and Ohm's law</title>
+<meta name="description" content="Interactive lessons: surface tension of a liquid by the capillary rise method, and verification of Ohm's law with the unknown resistance from an I–V graph.">
+<link rel="preload" href="fonts/Commissioner-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/FiraSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3C16 3 6 15 6 21a10 10 0 0 0 20 0C26 15 16 3 16 3z' fill='%23b8336a'/%3E%3C/svg%3E">
+</head>
+<body>
+<canvas id="bg" aria-hidden="true"></canvas>
+<div id="cursor" class="hidden" aria-hidden="true"><svg width="26" height="30" viewBox="0 0 26 30"><circle class="cu-ring" cx="2" cy="2" r="6"/><path class="cu-drop" d="M2 2 C 9 7, 20 12, 20 19 A 8.5 8.5 0 0 1 3.5 20.5 C 2.2 14, 2 8, 2 2 Z"/><ellipse class="cu-shine" cx="8.6" cy="18.4" rx="1.6" ry="2.6" transform="rotate(-25 8.6 18.4)"/><circle class="cu-core" cx="11.5" cy="20" r="2.2"/></svg></div>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><svg class="brand-mark" viewBox="0 0 30 30" aria-hidden="true"><rect x="1" y="1" width="28" height="28" rx="6" fill="#fff" stroke="#c7cdd6"/><path d="M15 5c0 0-7 8.6-7 12.6a7 7 0 0 0 14 0C22 13.6 15 5 15 5z" fill="#e5f3f8" stroke="#2b8fb3" stroke-width="1.6"/><path d="M10.5 19h3l1.2-3 1.6 5 1.2-2h2" fill="none" stroke="#b8336a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><div><div class="brand-t">Surface tension &amp; Ohm's law</div><div class="brand-s">Physics practicals · Labs 8 and 9</div></div></div>
+    <div class="lab-tabs" id="lab-tabs" role="tablist" aria-label="Lab" data-at="0"><span class="lab-thumb" aria-hidden="true"></span><button type="button" class="lab-tab" role="tab" data-key="st" aria-selected="true"><span class="lt-n">8</span>Surface tension</button><button type="button" class="lab-tab" role="tab" data-key="ohm" aria-selected="false"><span class="lt-n">9</span>Ohm's law</button></div>
+    <div class="top-crumb" id="top-crumb"></div>
+  </header>
+  <nav class="dots" id="rail-nav" aria-label="Pages of this lab"></nav>
+  <div id="rail-fill" class="rail-fill"></div><div id="rail-mark" class="rail-mark"></div>
+
+  <main class="stage">
+    <div class="stage-top"><button type="button" class="btn-prev" id="btn-prev" hidden>← Previous</button></div>
+
+    <!-- ===================== LAB 8 · SURFACE TENSION ===================== -->
+    <section class="view" id="view-st-practical" data-title="Practical" data-group="8 · Surface tension" data-lab="Surface tension">
+      <div class="sheet wide">
+        <div class="prac-intro">
+          <p class="eyebrow">Lab 8 · Practical</p>
+          <h1 class="page-h">Capillary rise bench</h1>
+          <p class="lede">A clean capillary tube is dipped into the liquid. The liquid climbs the bore and stops at a height <i>h</i>, read on a centimetre scale through a magnifier. Three fresh dips give three readings of <i>h</i>; their average gives the surface tension <i>γ</i>.</p>
+          <button type="button" class="btn-tut" id="st-tut"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3.5 1.5v11l9-5.5z" fill="currentColor"/></svg>Start tutorial</button>
+        </div>
+        <div class="rig-frame rig lock" id="st-rig-frame"><svg id="st-rig" viewBox="0 0 1000 620" role="img" aria-label="Beaker of liquid, capillary tube on a stand, centimetre scale and magnifier"></svg></div>
+        <p class="rig-msg" id="st-msg" aria-live="polite"></p>
+        <div class="prac-mid">
+          <div class="panel lock" id="st-ctl">
+            <h2 class="panel-h">Set-up</h2>
+            <div class="ctl-row"><label for="st-liq">Liquid</label><select id="st-liq"><option value="water">Water</option><option value="soap">Soap solution</option><option value="ethanol">Ethanol</option></select></div>
+            <div class="ctl-row"><label for="st-rad">Capillary</label><select id="st-rad"><option value="0.025">bore radius 0.025 cm</option><option value="0.05" selected>bore radius 0.05 cm</option><option value="0.10">bore radius 0.10 cm</option></select></div>
+            <p class="status" id="st-status"></p>
+            <div class="ctl-btns"><button type="button" class="btn-quiet" id="st-rinse">Rinse with the liquid</button><button type="button" class="btn-main" id="st-dip">Dip the capillary</button><button type="button" class="btn-quiet" id="st-lift">Lift out</button></div>
+            <p class="ctl-help small">The capillary can also be dragged down into the beaker and up out of it; with the capillary focused, ↑ and ↓ move it.</p>
+          </div>
+          <div class="panel lock" id="st-rec">
+            <h2 class="panel-h">Reading h</h2>
+            <p class="ctl-help">In the magnifier, the scale is read level with the bottom of the curved meniscus, in cm to two decimal places. Zero on the scale is level with the liquid surface in the beaker.</p>
+            <div class="rec-row"><input id="st-read" type="text" inputmode="decimal" autocomplete="off" placeholder="h in cm" aria-label="Reading of h in cm"><button type="button" class="btn-main" id="st-record">Record</button><button type="button" class="btn-quiet sm" id="st-undo">Delete last</button></div>
+            <p class="rec-msg" id="st-recmsg" aria-live="polite"></p>
+            <div class="table-wrap" style="margin-top:14px">
+              <table class="obs" id="st-table">
+                <thead><tr><th>Reading</th><th><i>h</i><sub>1</sub><span class="u">cm</span></th><th><i>h</i><sub>2</sub><span class="u">cm</span></th><th><i>h</i><sub>3</sub><span class="u">cm</span></th><th>Average(<i>h</i>)<span class="u">cm</span></th></tr></thead>
+                <tbody><tr><td>Height <i>h</i></td><td id="st-c0">—</td><td id="st-c1">—</td><td id="st-c2">—</td><td id="st-cav" class="avg-c">—</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="prac-lower">
+          <div class="panel" id="st-calc">
+            <div class="panel-head"><h2 class="panel-h">Calculation</h2><span class="panel-tag">γ = h r ρ g ÷ (2 cos θ)</span></div>
+            <div class="calc-rows lock">
+              <div class="cr" id="st-cr-h"><label for="st-in-h">Average height <span class="sym" tabindex="0" data-sym="h"><i>h</i></span> = (<span class="sym" tabindex="0" data-sym="h1"><i>h</i><sub>1</sub></span> + <span class="sym" tabindex="0" data-sym="h2"><i>h</i><sub>2</sub></span> + <span class="sym" tabindex="0" data-sym="h3"><i>h</i><sub>3</sub></span>) ÷ 3 <span class="u">cm</span></label><input id="st-in-h" type="text" inputmode="decimal" autocomplete="off"><div class="cr-work" id="st-w-h"></div></div>
+              <div class="cr" id="st-cr-r"><label for="st-in-r">Radius of the bore <span class="sym" tabindex="0" data-sym="r"><i>r</i></span> <span class="u">cm</span></label><input id="st-in-r" type="text" inputmode="decimal" autocomplete="off"><div class="cr-sub">The radius is half the bore diameter.</div></div>
+              <div class="cr" id="st-cr-rho"><label for="st-in-rho">Density of the liquid <span class="sym" tabindex="0" data-sym="rho"><i>ρ</i></span> <span class="u">g/cm³</span></label><input id="st-in-rho" type="text" inputmode="decimal" autocomplete="off"></div>
+              <div class="cr" id="st-cr-g"><label for="st-in-g">Acceleration due to gravity <span class="sym" tabindex="0" data-sym="g"><i>g</i></span> <span class="u">cm/s²</span></label><input id="st-in-g" type="text" inputmode="decimal" autocomplete="off"></div>
+              <div class="cr" id="st-cr-th"><label for="st-in-th">Contact angle <span class="sym" tabindex="0" data-sym="th"><i>θ</i></span> <span class="u">degrees</span></label><input id="st-in-th" type="text" inputmode="decimal" autocomplete="off"></div>
+              <div class="cr" id="st-cr-gam"><label for="st-in-gam">Surface tension <span class="sym" tabindex="0" data-sym="gam"><i>γ</i></span> = <span class="sym" tabindex="0" data-sym="hG"><i>h</i></span> <span class="sym" tabindex="0" data-sym="rG"><i>r</i></span> <span class="sym" tabindex="0" data-sym="rhoG"><i>ρ</i></span> <span class="sym" tabindex="0" data-sym="gG"><i>g</i></span> ÷ (2 cos <span class="sym" tabindex="0" data-sym="thG"><i>θ</i></span>) <span class="u">dyne/cm</span></label><input id="st-in-gam" type="text" inputmode="decimal" autocomplete="off"><div class="cr-work" id="st-w-gam"></div></div>
+            </div>
+            <div class="calc-actions lock"><button type="button" class="btn-main" id="st-check">Check</button></div>
+            <div class="check-msg" id="st-chk" aria-live="polite"></div>
+            <div class="result-box" id="st-result" hidden></div>
+          </div>
+        </div>
+        <div class="prac-foot lock"><button type="button" class="btn-quiet" id="st-reset">Start over</button></div>
+        <div class="page-end"><button type="button" class="btn-next" data-next>Next: Aim and outcomes →</button></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-st-aim" data-title="Aim and outcomes" data-lab="Surface tension">
+      <div class="sheet">
+        <p class="disclaimer">This site was prepared with the help of AI. Values, wording and figures may contain mistakes; the lab manual and the instructor take precedence.</p>
+        <p class="eyebrow">Lab 8</p>
+        <h1 class="page-h">Surface tension of a liquid</h1>
+        <figure class="aim-figure"><svg id="st-aim-fig" viewBox="0 0 800 330" role="img" aria-label="A capillary tube in a beaker of water: the water rises to height h inside the bore of radius r"></svg></figure>
+        <div class="aim-block"><div class="aim-label">Aim</div><p class="aim-text">To determine the surface tension of a liquid by the capillary rise method.</p></div>
+        <h2 class="sub-h">Intended learning outcomes</h2>
+        <ul class="outcomes">
+          <li>Determine the surface tension of a liquid by the capillary rise method.</li>
+          <li>Explain the factors on which surface tension depends.</li>
+          <li>Represent the data with accuracy.</li>
+        </ul>
+        <h2 class="sub-h">Medical perspectives</h2>
+        <div class="med-row">
+          <div class="med"><svg class="med-ic" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 8v20M32 28c-6 0-10 4-14 4M32 28c6 0 10 4 14 4" fill="none" stroke="#5d6878" stroke-width="3" stroke-linecap="round"/><path d="M18 26c-8 2-12 12-10 22 2 7 10 8 14 3 3-4 2-14 4-20z" fill="#fbe9f0" stroke="#b8336a" stroke-width="2.4"/><path d="M46 26c8 2 12 12 10 22-2 7-10 8-14 3-3-4-2-14-4-20z" fill="#fbe9f0" stroke="#b8336a" stroke-width="2.4"/></svg><h3>Lung function and alveolar stability</h3><p>The alveoli are tiny, curved, liquid-lined air sacs. The surface tension of that lining pulls each one inward, so a pressure difference ΔP = 2γ/r is needed to keep it open.</p></div>
+          <div class="med"><svg class="med-ic" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="20" fill="#e3f2f8" stroke="#2b8fb3" stroke-width="2.4"/><g fill="#b8336a"><circle cx="32" cy="12" r="3"/><circle cx="50" cy="24" r="3"/><circle cx="46" cy="46" r="3"/><circle cx="18" cy="46" r="3"/><circle cx="14" cy="24" r="3"/></g><g stroke="#b8336a" stroke-width="2" stroke-linecap="round"><path d="M32 15v5M47.5 25.5l-4 2.5M43.8 43.8l-3.5-3.5M20.2 43.8l3.5-3.5M16.5 25.5l4 2.5"/></g></svg><h3>Surfactant prevents collapse</h3><p>Type II alveolar cells secrete pulmonary surfactant. It lowers the surface tension of the lining, most of all in small alveoli, so small and large alveoli stay open together and breathing takes less work.</p></div>
+          <div class="med"><svg class="med-ic" viewBox="0 0 64 64" aria-hidden="true"><path d="M10 34h10l5-12 7 22 6-16 4 6h12" fill="none" stroke="#b8336a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="32" cy="32" r="26" fill="none" stroke="#9aa3b0" stroke-width="2"/></svg><h3>Respiratory disorders</h3><p>Premature babies may not yet make enough surfactant, causing neonatal respiratory distress syndrome; replacement surfactant is given into the airway. Damaged surfactant also stiffens the lungs in acute respiratory distress syndrome.</p></div>
+        </div>
+        <figure class="med-fig">
+          <div class="seg" style="justify-content:center;margin-bottom:8px" id="lap-seg"><button type="button" aria-pressed="true" data-s="0">Without surfactant</button><button type="button" aria-pressed="false" data-s="1">With surfactant</button></div>
+          <svg id="st-lap-fig" viewBox="0 0 860 330" role="img" aria-label="Young–Laplace law in two connected alveoli of different size"></svg>
+          <figcaption id="st-lap-cap"></figcaption>
+        </figure>
+        <div class="page-end"><button type="button" class="btn-next" data-next>Next: Theory →</button></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-st-theory" data-title="Theory" data-lab="Surface tension">
+      <div class="sheet">
+        <p class="eyebrow">Lab 8 · Theory</p>
+        <h1 class="page-h">Why a liquid climbs a narrow tube</h1>
+        <p class="lede">A liquid surface behaves like a stretched skin. Where that skin meets glass, it pulls the liquid up the wall; in a narrow bore the pull can lift a column several centimetres high.</p>
+
+        <h2 class="sub-h first">Cohesion, adhesion and surface tension</h2>
+        <div class="fig-grid">
+          <figure class="fig-box"><svg id="st-th-mol" viewBox="0 0 520 300" role="img" aria-label="A molecule inside the liquid is pulled equally in all directions; a molecule at the surface feels a net inward pull"></svg></figure>
+          <div class="fig-text">
+            <p><b>Cohesion</b> is the attraction between molecules of the same liquid. A molecule deep inside is pulled equally in every direction, so the pulls cancel. A molecule at the surface has neighbours only below and beside it, so it feels a net pull <b>inward</b>.</p>
+            <p>The surface therefore tends to shrink to the smallest possible area, as if it were an elastic film. <b>Surface tension</b> <i>γ</i> is the force per unit length acting along the surface: <i>γ</i> = <i>F</i> / <i>L</i>.</p>
+            <p><b>Adhesion</b> is the attraction between the liquid and another material, such as glass. Whether a liquid wets a surface depends on adhesion compared with cohesion.</p>
+            <p class="note" style="margin:0">Units: dyne/cm in the CGS system. 1 dyne/cm = 10<sup>−3</sup> N/m, so water's 72 dyne/cm is 0.072 N/m.</p>
+          </div>
+        </div>
+
+        <h2 class="sub-h">Contact angle</h2>
+        <div class="int-row">
+          <figure class="int"><svg id="st-th-ca0" viewBox="0 0 260 180" aria-hidden="true"></svg><figcaption><b>θ ≈ 0°: water on clean glass</b>Adhesion beats cohesion. The liquid spreads, the meniscus is concave (curving up at the wall) and the liquid rises in a capillary.</figcaption></figure>
+          <figure class="int"><svg id="st-th-ca1" viewBox="0 0 260 180" aria-hidden="true"></svg><figcaption><b>0° &lt; θ &lt; 90°: partial wetting</b>The liquid still rises, but less: only the vertical part of the pull, γ cos θ, lifts the column.</figcaption></figure>
+          <figure class="int"><svg id="st-th-ca2" viewBox="0 0 260 180" aria-hidden="true"></svg><figcaption><b>θ &gt; 90°: mercury on glass</b>Cohesion beats adhesion. The meniscus is convex and cos θ is negative, so the liquid is pushed <i>down</i> the tube.</figcaption></figure>
+        </div>
+        <p class="note">The contact angle θ is measured inside the liquid, between the glass wall and the liquid surface where they meet.</p>
+
+        <h2 class="sub-h">Capillary rise: where the formula comes from</h2>
+        <ol class="deriv">
+          <li>The surface pulls along the whole inner rim of the bore, a length 2π<i>r</i>. Its vertical part is <i>γ</i> cos <i>θ</i> per unit length.<span class="eqn">upward force = 2π r γ cos θ</span></li>
+          <li>The raised column is a cylinder of radius <i>r</i> and height <i>h</i>. Its weight is its volume × density × <i>g</i>.<span class="eqn">weight = π r² h ρ g</span></li>
+          <li>The liquid stops rising when the two balance.<span class="eqn">2π r γ cos θ = π r² h ρ g</span></li>
+          <li>Dividing both sides by π<i>r</i> and solving for <i>γ</i>:<span class="eqn">γ = h r ρ g ÷ (2 cos θ)</span></li>
+          <li>For water in clean glass θ = 0°, cos 0° = 1, so the formula reduces to <span class="eqn">γ = h r ρ g ÷ 2</span></li>
+        </ol>
+        <div class="terms five" style="margin-top:22px">
+          <div class="term"><div class="term-k">h</div><p>height of the column above the liquid in the beaker, cm</p></div>
+          <div class="term"><div class="term-k">r</div><p>radius of the bore (half its diameter), cm</p></div>
+          <div class="term"><div class="term-k">ρ</div><p>density of the liquid, g/cm³</p></div>
+          <div class="term"><div class="term-k">g</div><p>980 cm/s²</p></div>
+          <div class="term"><div class="term-k">θ</div><p>contact angle; 0° for water on clean glass</p></div>
+        </div>
+        <div class="explorer">
+          <div class="ex-view"><svg id="st-ex-svg" viewBox="0 0 520 330" role="img" aria-label="Predicted capillary rise for the chosen liquid and bore"></svg></div>
+          <div class="ex-side">
+            <div class="ctl"><label for="st-ex-r">Bore radius <b id="st-ex-rv">0.050 cm</b></label><input type="range" id="st-ex-r" min="0.02" max="0.15" step="0.005" value="0.05"></div>
+            <div class="seg" id="st-ex-liq"><button type="button" aria-pressed="true" data-l="water">Water</button><button type="button" aria-pressed="false" data-l="soap">Soap solution</button><button type="button" aria-pressed="false" data-l="ethanol">Ethanol</button><button type="button" aria-pressed="false" data-l="mercury">Mercury</button></div>
+            <div class="ex-out" id="st-ex-out" aria-live="polite"></div>
+            <p class="ex-note">h = 2γ cos θ ÷ (r ρ g): halve the radius and the rise doubles.</p>
+          </div>
+        </div>
+
+        <h2 class="sub-h">What surface tension depends on</h2>
+        <div class="terms">
+          <div class="term"><div class="term-k">Nature of the liquid</div><p>Stronger cohesion means higher γ: mercury about 485, water 72, ethanol 22 dyne/cm.</p></div>
+          <div class="term"><div class="term-k">Temperature</div><p>γ falls as temperature rises, because the molecules move faster and attract less effectively. Water: about 75.6 dyne/cm at 0 °C, 72.0 at 25 °C, 58.9 at 100 °C.</p></div>
+          <div class="term"><div class="term-k">Impurities</div><p>Dissolved substances change γ. Grease or oil on the glass also changes the contact angle, which is why the capillary is cleaned first.</p></div>
+          <div class="term"><div class="term-k">Surfactants</div><p>Soap and detergent molecules gather at the surface and lower γ strongly, to about 25–35 dyne/cm for a soap solution.</p></div>
+        </div>
+
+        <h2 class="sub-h">Laplace law and the alveoli</h2>
+        <div class="fig-grid">
+          <div class="fig-text">
+            <p>A curved liquid surface pushes on the side it curves toward. For a spherical surface of radius <i>r</i>, the pressure inside is higher than outside by</p>
+            <p class="eq-hero" style="font-size:28px">ΔP = 2γ / r</p>
+            <p>A soap bubble has two surfaces (inside and outside of the film), so for it ΔP = 4γ / r.</p>
+            <p>An alveolus of radius 0.01 cm lined with a watery film of γ = 72 dyne/cm would need ΔP = 2 × 72 ÷ 0.01 = 14 400 dyne/cm², about 14.7 cm H₂O, just to stay open. With surfactant bringing γ down to about 25 dyne/cm, the same alveolus needs only about 5 cm H₂O.</p>
+          </div>
+          <div class="side-note aqua"><div class="sn-k">Why surfactant matters</div><p>By ΔP = 2γ/r, a small alveolus with the same γ would have a higher pressure than a large one and would empty into it. Surfactant molecules crowd together as an alveolus shrinks, lowering γ most in the smallest alveoli. The pressures even out and the lung stays evenly inflated.</p></div>
+        </div>
+        <div class="page-end"><button type="button" class="btn-next" data-next>Next: Method →</button></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-st-method" data-title="Method" data-lab="Surface tension">
+      <div class="sheet">
+        <p class="eyebrow">Lab 8 · Method</p>
+        <h1 class="page-h">Procedure</h1>
+        <h2 class="sub-h first">Apparatus</h2>
+        <div class="app-grid">
+          <div class="app-item"><svg id="st-ap-0" viewBox="0 0 160 110" aria-hidden="true"></svg><span>Capillary tube</span><small>fine, uniform bore of known radius</small></div>
+          <div class="app-item"><svg id="st-ap-1" viewBox="0 0 160 110" aria-hidden="true"></svg><span>Beaker of liquid</span><small>wide enough that its surface stays flat</small></div>
+          <div class="app-item"><svg id="st-ap-2" viewBox="0 0 160 110" aria-hidden="true"></svg><span>Stand and clamp</span><small>hold the capillary vertical</small></div>
+          <div class="app-item"><svg id="st-ap-3" viewBox="0 0 160 110" aria-hidden="true"></svg><span>Scale in cm</span><small>zero level with the liquid surface</small></div>
+          <div class="app-item"><svg id="st-ap-4" viewBox="0 0 160 110" aria-hidden="true"></svg><span>Magnifier</span><small>to read the meniscus against the scale</small></div>
+          <div class="app-item"><svg id="st-ap-5" viewBox="0 0 160 110" aria-hidden="true"></svg><span>Liquid under test</span><small>water here; density ρ known</small></div>
+        </div>
+        <h2 class="sub-h">Steps</h2>
+        <div class="method-wrap">
+          <ol class="steps" id="st-steps">
+            <li><button type="button" class="step"><span class="sn">1</span><span>Clean the capillary by drawing the liquid through it and letting it drain, so the glass is wetted and free of grease.</span></button></li>
+            <li><button type="button" class="step"><span class="sn">2</span><span>Clamp the capillary vertically and dip its lower end into the liquid in the beaker.</span></button></li>
+            <li><button type="button" class="step"><span class="sn">3</span><span>Let the column settle. Measure the height <i>h</i> from the liquid surface in the beaker to the bottom of the meniscus in the tube.</span></button></li>
+            <li><button type="button" class="step"><span class="sn">4</span><span>Lift the capillary out, dip it again and take a new reading. Repeat for three readings <i>h</i><sub>1</sub>, <i>h</i><sub>2</sub>, <i>h</i><sub>3</sub> and average them.</span></button></li>
+            <li><button type="button" class="step"><span class="sn">5</span><span>Calculate γ = <i>h r ρ g</i> ÷ (2 cos θ) with <i>r</i> in cm, ρ in g/cm³, <i>g</i> = 980 cm/s² and θ = 0°.</span></button></li>
+          </ol>
+          <div class="step-view"><div class="step-fig"><svg id="st-step-svg" viewBox="0 0 520 360" aria-hidden="true"></svg></div><p class="step-cap" id="st-step-cap" aria-live="polite"></p></div>
+        </div>
+        <div class="tips"><div class="tips-label">Good practice</div><ul>
+          <li>Keep the capillary exactly vertical; a tilted tube gives a longer, wrong column.</li>
+          <li>Read at eye level with the meniscus to avoid parallax, at the bottom of the curve.</li>
+          <li>Use the radius, not the diameter, and keep every length in cm.</li>
+          <li>Wet the inside of the tube before each reading so the meniscus forms the same way every time.</li>
+        </ul></div>
+        <div class="tips safety"><div class="tips-label">Care</div><ul>
+          <li>Capillary tubes are thin glass and break easily; handle them gently and dispose of broken glass safely.</li>
+          <li>Keep ethanol away from flames.</li>
+        </ul></div>
+        <div class="page-end"><button type="button" class="btn-next" data-next>Next: Observation and calculation →</button></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-st-obs" data-title="Observation and calculation" data-lab="Surface tension">
+      <div class="sheet">
+        <p class="eyebrow">Lab 8 · Observation and calculation</p>
+        <h1 class="page-h">From three readings to γ</h1>
+        <p class="ex-head"><span class="ex-badge">Example values</span></p>
+        <p class="note" style="margin-top:0;margin-bottom:22px">The numbers on this page are a worked example for water in a capillary of radius 0.05 cm, chosen to be physically consistent.</p>
+        <div class="formula-card"><div class="big-eq"><i>γ</i> = <span class="frac"><span><i>h r ρ g</i></span><span>2 cos <i>θ</i></span></span></div><p>γ in dyne/cm when h and r are in cm, ρ in g/cm³ and g in cm/s².</p></div>
+        <h2 class="sub-h">Observation table</h2>
+        <div class="table-wrap"><table class="obs">
+          <thead><tr><th>Reading</th><th><i>h</i><sub>1</sub><span class="u">cm</span></th><th><i>h</i><sub>2</sub><span class="u">cm</span></th><th><i>h</i><sub>3</sub><span class="u">cm</span></th><th>Average(<i>h</i>)<span class="u">cm</span></th></tr></thead>
+          <tbody><tr><td>Height <i>h</i></td><td>2.93</td><td>2.95</td><td>2.94</td><td class="avg-c">2.94</td></tr></tbody>
+        </table></div>
+        <h2 class="sub-h">Calculation</h2>
+        <div class="calc">
+          <div class="calc-step"><span class="cs-n">1</span><span class="sub">Average height</span><span class="eq-line">h = (2.93 + 2.95 + 2.94) ÷ 3 = 8.82 ÷ 3 = <b>2.94 cm</b></span></div>
+          <div class="calc-step"><span class="cs-n">2</span><span class="sub">Known values</span><span class="eq-line">r = 0.05 cm &nbsp;·&nbsp; ρ = 1.00 g/cm³ &nbsp;·&nbsp; g = 980 cm/s² &nbsp;·&nbsp; θ = 0°, cos θ = 1</span></div>
+          <div class="calc-step"><span class="cs-n">3</span><span class="sub">Numerator</span><span class="eq-line">h r ρ g = 2.94 × 0.05 × 1.00 × 980 = <b>144.06</b></span></div>
+          <div class="calc-step"><span class="cs-n">4</span><span class="sub">Divide by 2 cos θ</span><span class="eq-line">γ = 144.06 ÷ (2 × 1) = <b>72.03 ≈ 72.0 dyne/cm</b></span></div>
+          <div class="calc-step result"><span class="cs-n">✓</span><span class="sub">Result</span><span class="eq-line">γ = 72.0 dyne/cm, against the standard value of 72 dyne/cm for water: a difference of about 0.04 %.</span></div>
+        </div>
+        <h2 class="sub-h">Common slips</h2>
+        <div class="slips">
+          <div class="slip"><h3>Diameter instead of radius</h3><p>Using d = 0.10 cm gives γ twice too large (144 dyne/cm). The formula needs r = d ÷ 2.</p></div>
+          <div class="slip"><h3>Forgetting the 2</h3><p>h r ρ g alone is 144 dyne/cm; it must be divided by 2 cos θ.</p></div>
+          <div class="slip"><h3>Millimetres for h</h3><p>29.4 mm put in as 29.4 makes γ ten times too large. Convert to 2.94 cm first.</p></div>
+          <div class="slip"><h3>g in m/s²</h3><p>With h and r in cm, g must be 980 cm/s², not 9.8.</p></div>
+        </div>
+        <div class="page-end"><button type="button" class="btn-next" data-next>Next: MCQs →</button></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-st-mcq" data-title="MCQs" data-lab="Surface tension">
+      <div class="sheet">
+        <p class="eyebrow">Lab 8 · MCQs</p>
+        <h1 class="page-h">Check understanding</h1>
+        <div class="mcq-bar"><span class="mcq-score" id="st-mcq-score"></span><button type="button" class="btn-quiet sm" id="st-mcq-reset">Reset</button></div>
+        <ol class="mcq-list" id="st-mcq-list"></ol>
+        <div class="page-end with-extras">
+          <div class="extras"><button type="button" class="extras-toggle" aria-expanded="false" aria-haspopup="true">Optional extras ▴</button>
+            <div class="extras-panel" role="menu">
+              <a role="menuitem" href="https://grokipedia.com/page/Surface_tension" target="_blank" rel="noopener">Surface tension<small>Grokipedia</small></a>
+              <a role="menuitem" href="https://grokipedia.com/page/Capillary_action" target="_blank" rel="noopener">Capillary action<small>Grokipedia</small></a>
+              <a role="menuitem" href="https://grokipedia.com/page/Pulmonary_surfactant" target="_blank" rel="noopener">Pulmonary surfactant<small>Grokipedia</small></a>
+              <a role="menuitem" href="https://www.youtube.com/watch?v=YoF7RuBZIpM" target="_blank" rel="noopener">Experiment on capillary action using a capillary tube<small>YouTube · video</small></a>
+            </div>
+          </div>
+          <button type="button" class="btn-next" data-next>Next: Lab 9 · Ohm's law →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== LAB 9 · OHM'S LAW ===================== -->
+    <section class="view" id="view-ohm-practical" data-title="Practical" data-group="9 · Ohm's law" data-lab="Ohm's law">
+      <div class="sheet wide">
+        <div class="prac-intro">
+          <p class="eyebrow">Lab 9 · Practical</p>
+          <h1 class="page-h">Ohm's law bench</h1>
+          <p class="lede">The supply, an ammeter, a voltmeter and an unknown resistor are wired on the bench. For each supply setting the meters give V and I; the I–V graph is a straight line whose slope S gives the resistance R = 1/S.</p>
+          <button type="button" class="btn-tut" id="ohm-tut"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3.5 1.5v11l9-5.5z" fill="currentColor"/></svg>Start tutorial</button>
+        </div>
+        <div class="rig-frame rig lock" id="ohm-rig-frame"><svg id="ohm-rig" viewBox="0 0 1000 600" role="img" aria-label="Power supply, ammeter, voltmeter and resistor on a breadboard, with terminals to wire"></svg></div>
+        <p class="rig-msg" id="ohm-msg" aria-live="polite"></p>
+        <div class="prac-mid">
+          <div class="panel lock" id="ohm-ctl">
+            <h2 class="panel-h">Supply and wiring</h2>
+            <div class="ctl-row"><label>Supply</label><button type="button" class="btn-quiet sm" id="ohm-vdn" aria-label="Lower the supply voltage">− 2 V</button><b id="ohm-vset" style="font:700 20px/1 var(--f-head);min-width:64px;text-align:center">2 V</b><button type="button" class="btn-quiet sm" id="ohm-vup" aria-label="Raise the supply voltage">+ 2 V</button><button type="button" class="btn-main" id="ohm-on" aria-pressed="false">Switch ON</button></div>
+            <p class="ctl-help small">Wires: press on one terminal and drag to another, or tap one terminal and then another. Tap a wire to remove it.</p>
+            <div class="ctl-btns"><button type="button" class="btn-quiet" id="ohm-clear">Clear wires</button></div>
+            <p class="status" id="ohm-status"></p>
+          </div>
+          <div class="panel lock" id="ohm-rec">
+            <h2 class="panel-h">Readings</h2>
+            <p class="ctl-help">With the circuit correct and the supply on, Record reads both meters into the table. One row for each supply setting: 2, 4, 6, 8 and 10 V.</p>
+            <div class="rec-row"><button type="button" class="btn-main" id="ohm-record">Record</button><button type="button" class="btn-quiet sm" id="ohm-undo">Delete last</button></div>
+            <p class="rec-msg" id="ohm-recmsg" aria-live="polite"></p>
+            <div class="table-wrap" style="margin-top:12px">
+              <table class="obs" id="ohm-table">
+                <thead><tr><th>Supply voltage<span class="u">volt</span></th><th><i>V</i><span class="u">volt</span></th><th><i>I</i><span class="u">ampere</span></th><th><i>R</i> = <i>V</i>/<i>I</i><span class="u">ohm</span></th></tr></thead>
+                <tbody id="ohm-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="prac-lower">
+          <div class="panel" id="ohm-graph-panel">
+            <div class="panel-head"><h2 class="panel-h">I–V graph</h2><span class="panel-tag">drag the two handles onto the best straight line</span></div>
+            <div class="graph-wrap lock"><svg id="ohm-graph" viewBox="0 0 760 470" role="img" aria-label="Graph of current I against voltage V with a movable best-fit line"></svg></div>
+            <div class="graph-foot"><span class="g-read" id="ohm-gread" aria-live="polite"></span><button type="button" class="btn-quiet sm lock" id="ohm-greset">Reset line</button></div>
+          </div>
+          <div class="panel" id="ohm-calc">
+            <div class="panel-head"><h2 class="panel-h">Calculation</h2><span class="panel-tag">R = 1 ÷ S</span></div>
+            <div class="calc-rows lock">
+              <div class="cr" id="ohm-cr-S"><label for="ohm-in-S">Slope <span class="sym" tabindex="0" data-sym="S"><i>S</i></span> = (<span class="sym" tabindex="0" data-sym="y2"><i>y</i><sub>2</sub></span> − <span class="sym" tabindex="0" data-sym="y1"><i>y</i><sub>1</sub></span>) ÷ (<span class="sym" tabindex="0" data-sym="x2"><i>x</i><sub>2</sub></span> − <span class="sym" tabindex="0" data-sym="x1"><i>x</i><sub>1</sub></span>) <span class="u">A/V</span></label><input id="ohm-in-S" type="text" inputmode="decimal" autocomplete="off"><div class="cr-work" id="ohm-w-S"></div></div>
+              <div class="cr" id="ohm-cr-RG"><label for="ohm-in-RG">Graphical resistance <span class="sym" tabindex="0" data-sym="RG"><i>R</i><sub>G</sub></span> = 1 ÷ <span class="sym" tabindex="0" data-sym="SG"><i>S</i></span> <span class="u">Ω</span></label><input id="ohm-in-RG" type="text" inputmode="decimal" autocomplete="off"><div class="cr-work" id="ohm-w-RG"></div></div>
+              <div class="cr" id="ohm-cr-RE"><label for="ohm-in-RE">Experimental resistance <span class="sym" tabindex="0" data-sym="RE"><i>R</i><sub>E</sub></span> = mean of the <span class="sym" tabindex="0" data-sym="VI"><i>V</i>/<i>I</i></span> column <span class="u">Ω</span></label><input id="ohm-in-RE" type="text" inputmode="decimal" autocomplete="off"><div class="cr-work" id="ohm-w-RE"></div></div>
+              <div class="cr" id="ohm-cr-RT"><label for="ohm-in-RT">Theoretical resistance <span class="sym" tabindex="0" data-sym="RT"><i>R</i><sub>T</sub></span>, the labelled value <span class="u">Ω</span></label><input id="ohm-in-RT" type="text" inputmode="decimal" autocomplete="off"></div>
+              <div class="cr" id="ohm-cr-pe"><label for="ohm-in-pe">Percentage error <span class="sym" tabindex="0" data-sym="pe">% error</span> = |<span class="sym" tabindex="0" data-sym="RGp"><i>R</i><sub>G</sub></span> − <span class="sym" tabindex="0" data-sym="RTp"><i>R</i><sub>T</sub></span>| ÷ <span class="sym" tabindex="0" data-sym="RTp2"><i>R</i><sub>T</sub></span> × 100 <span class="u">%</span></label><input id="ohm-in-pe" type="text" inputmode="decimal" autocomplete="off"><div class="cr-work" id="ohm-w-pe"></div></div>
+            </div>
+            <div class="calc-actions lock"><button type="button" class="btn-main" id="ohm-check">Check</button></div>
+            <div class="check-msg" id="ohm-chk" aria-live="polite"></div>
+            <div class="result-box" id="ohm-result" hidden></div>
+          </div>
+        </div>
+        <div class="prac-foot lock"><button type="button" class="btn-quiet" id="ohm-reset">Start over</button></div>
+        <div class="page-end"><button type="button" class="btn-next" data-next>Next: Aim and outcomes →</button></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-ohm-aim" data-title="Aim and outcomes" data-lab="Ohm's law">
+      <div class="sheet">
+        <p class="disclaimer">This site was prepared with the help of AI. Values, wording and figures may contain mistakes; the lab manual and the instructor take precedence.</p>
+        <p class="eyebrow">Lab 9</p>
+        <h1 class="page-h">Ohm's law and an unknown resistance</h1>
+        <figure class="aim-figure"><svg id="ohm-aim-fig" viewBox="0 0 800 300" role="img" aria-label="Circuit: supply in series with an ammeter and a resistor, voltmeter across the resistor, next to its straight-line I–V graph"></svg></figure>
+        <div class="aim-block"><div class="aim-label">Aim</div><p class="aim-text">To verify Ohm's law and determine the unknown resistance.</p></div>
+        <h2 class="sub-h">Intended learning outcomes</h2>
+        <ul class="outcomes">
+          <li>Verify Ohm's law and find the unknown resistance.</li>
+          <li>Plot the graph between current and voltage, and analyse the experimental error.</li>
+        </ul>
+        <h2 class="sub-h">Medical perspectives</h2>
+        <div class="med-row">
+          <div class="med"><svg class="med-ic" viewBox="0 0 64 64" aria-hidden="true"><path d="M22 58V36c-6-4-8-12-6-20 2-6 8-9 16-9s14 3 16 9c2 8 0 16-6 20v22" fill="none" stroke="#5d6878" stroke-width="2.6" stroke-linecap="round"/><path d="M16 30h8l3-6 4 12 3-8 2 2h12" fill="none" stroke="#b8336a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><h3>Electrical resistance of body tissues</h3><p>Blood, muscle and other watery tissues conduct well; fat, bone and dry skin conduct poorly. Dry skin can be around 100 kΩ, wet skin only about 1 kΩ, and the body's interior a few hundred ohms.</p></div>
+          <div class="med"><svg class="med-ic" viewBox="0 0 64 64" aria-hidden="true"><rect x="6" y="14" width="52" height="36" rx="5" fill="#e5f3f8" stroke="#2b8fb3" stroke-width="2.4"/><path d="M10 34h9l3-8 4 16 4-22 4 14h20" fill="none" stroke="#b8336a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><h3>ECG and bioimpedance</h3><p>An ECG measures tiny voltages on the skin, so electrodes with gel keep the contact resistance low. Bioimpedance devices pass a small, safe current and use V = IR to estimate body water and fat.</p></div>
+          <div class="med"><svg class="med-ic" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6l24 10v14c0 14-10 24-24 28C18 54 8 44 8 30V16z" fill="#fbecf2" stroke="#b8336a" stroke-width="2.4"/><path d="M34 16l-10 18h8l-4 14 12-20h-8z" fill="#b8336a"/></svg><h3>Electrical safety</h3><p>The current through a body is I = V/R, so low skin resistance is dangerous. Around 1 mA is felt, about 10 mA can stop a person letting go, and around 100 mA across the chest can cause ventricular fibrillation.</p></div>
+        </div>
+        <figure class="med-fig">
+          <div class="seg" style="margin-bottom:10px" id="dev-seg"><button type="button" aria-pressed="true" data-d="0">Pacemaker</button><button type="button" aria-pressed="false" data-d="1">Defibrillator (ICD)</button><button type="button" aria-pressed="false" data-d="2">Pulmonary artery sensor</button></div>
+          <svg id="ohm-dev-fig" viewBox="0 0 860 340" role="img" aria-label="Implantable cardiac devices and a pulmonary artery sensor in the chest"></svg>
+          <figcaption id="ohm-dev-cap"></figcaption>
+        </figure>
+        <div class="page-end"><button type="button" class="btn-next" data-next>Next: Theory →</button></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-ohm-theory" data-title="Theory" data-lab="Ohm's law">
+      <div class="sheet">
+        <p class="eyebrow">Lab 9 · Theory</p>
+        <h1 class="page-h">Current, voltage and resistance</h1>
+        <p class="lede">At a fixed temperature, the current through a metallic conductor is proportional to the potential difference across it. The constant of proportionality is set by the resistance.</p>
+        <h2 class="sub-h first">Resistance and Ohm's law</h2>
+        <div class="eq-steps"><span class="eq-big">V = I R</span><span class="arr">⇔</span><span>I = (1/R) V</span><span class="arr">⇒</span><span>slope of I against V = 1/R</span></div>
+        <div class="terms three">
+          <div class="term"><div class="term-k">V · volt</div><p>potential difference across the component: energy per coulomb of charge passing through</p></div>
+          <div class="term"><div class="term-k">I · ampere</div><p>current: the rate of flow of charge, 1 A = 1 C/s</p></div>
+          <div class="term"><div class="term-k">R · ohm (Ω)</div><p>resistance, 1 Ω = 1 V/A; for a wire R = ρL/A, so it grows with length and falls with cross-section</p></div>
+        </div>
+        <p class="note">With I on the y-axis and V on the x-axis, the graph of an ohmic resistor is a straight line through the origin. A steeper line means a smaller resistance.</p>
+
+        <h2 class="sub-h">Ohmic and non-ohmic components</h2>
+        <div class="explorer">
+          <div class="ex-view"><svg id="ohm-ex-svg" viewBox="0 0 520 340" role="img" aria-label="I–V curves of different components"></svg></div>
+          <div class="ex-side">
+            <div class="seg" id="ohm-ex-seg"><button type="button" aria-pressed="true" data-c="res">Resistor</button><button type="button" aria-pressed="false" data-c="lamp">Filament lamp</button><button type="button" aria-pressed="false" data-c="diode">Diode</button></div>
+            <div class="ctl"><label for="ohm-ex-v">Voltage across it <b id="ohm-ex-vv">4.0 V</b></label><input type="range" id="ohm-ex-v" min="0" max="10" step="0.1" value="4"></div>
+            <div class="ex-out" id="ohm-ex-out" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <h2 class="sub-h">Internal resistance of the supply</h2>
+        <div class="fig-grid">
+          <figure class="fig-box"><svg id="ohm-th-int" viewBox="0 0 520 260" role="img" aria-label="A supply drawn as an EMF E in series with an internal resistance r"></svg></figure>
+          <div class="fig-text">
+            <p>A real supply behaves like an ideal EMF <i>E</i> in series with a small <b>internal resistance</b> <i>r</i>. When a current <i>I</i> flows, part of the EMF is used inside the supply:</p>
+            <p class="eq-hero" style="font-size:26px">V = E − I r</p>
+            <p>So the voltmeter across the resistor reads a little less than the supply setting, and the gap grows with the current. This does not spoil the experiment: R is found from the V and I actually measured across the resistor.</p>
+          </div>
+        </div>
+
+        <h2 class="sub-h">Connecting the meters</h2>
+        <div class="two-notes" style="margin-top:0">
+          <div class="side-note"><div class="sn-k">Ammeter: in series</div><p>The same current must pass through the ammeter and the resistor, so the ammeter is placed in the loop. Its resistance is very small, so it hardly changes the current. Connected across the resistor (in parallel) it short-circuits it and a large current flows: this can damage the meter.</p></div>
+          <div class="side-note aqua"><div class="sn-k">Voltmeter: in parallel</div><p>The voltmeter measures the potential difference between the two ends of the resistor, so it is connected across them. Its resistance is very large, so it takes almost no current. Placed in series, it blocks the current and the ammeter reads almost zero.</p></div>
+        </div>
+        <p class="note">Polarity matters for moving-coil meters: current enters at the + (red) terminal. Connected the wrong way round, the needle tries to move below zero.</p>
+
+        <h2 class="sub-h">Body tissue impedance and safety</h2>
+        <div class="fig-grid">
+          <div class="fig-text">
+            <p>The body is a conductor made of salty fluids divided by cell membranes. For direct current the membranes act like insulators, while alternating current can pass through them, so the body's opposition to current, its <b>impedance</b>, depends on frequency. Bioimpedance analysis uses this to estimate body water and fat-free mass.</p>
+            <p>Skin carries most of the resistance. Ohm's law shows why wet skin is dangerous: with 230 V across about 1000 Ω, I = 230 ÷ 1000 = 0.23 A, more than enough to stop the heart. With 100 000 Ω of dry skin the same voltage drives about 2.3 mA.</p>
+            <p>Medical equipment is therefore earthed, insulated and fitted with current limits, and devices touching the heart directly have far stricter leakage-current limits than those on the skin.</p>
+          </div>
+          <div class="side-note"><div class="sn-k">Current through the body</div><p>≈ 1 mA: just felt<br>≈ 10 mA: muscles clamp, hard to let go<br>≈ 100 mA across the chest: ventricular fibrillation<br>Values for mains frequency, hand to hand, about one second.</p></div>
+        </div>
+        <div class="page-end"><button type="button" class="btn-next" data-next>Next: Method →</button></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-ohm-method" data-title="Method" data-lab="Ohm's law">
+      <div class="sheet">
+        <p class="eyebrow">Lab 9 · Method</p>
+        <h1 class="page-h">Procedure</h1>
+        <h2 class="sub-h first">Equipment and symbols</h2>
+        <div class="table-wrap"><table class="sym-t">
+          <thead><tr><th>Equipment</th><th>Symbol</th><th>Name and role</th></tr></thead>
+          <tbody>
+            <tr><td class="ic"><svg id="ohm-eq-0" viewBox="0 0 120 60" aria-hidden="true"></svg></td><td class="ic"><svg id="ohm-sy-0" viewBox="0 0 120 60" aria-hidden="true"></svg></td><td><b>Battery (power supply)</b><br>Provides the EMF that drives the current; its setting is varied in steps.</td></tr>
+            <tr><td class="ic"><svg id="ohm-eq-1" viewBox="0 0 120 60" aria-hidden="true"></svg></td><td class="ic"><svg id="ohm-sy-1" viewBox="0 0 120 60" aria-hidden="true"></svg></td><td><b>Voltmeter</b><br>Measures the potential difference across the resistor; connected in parallel.</td></tr>
+            <tr><td class="ic"><svg id="ohm-eq-2" viewBox="0 0 120 60" aria-hidden="true"></svg></td><td class="ic"><svg id="ohm-sy-2" viewBox="0 0 120 60" aria-hidden="true"></svg></td><td><b>Ammeter</b><br>Measures the current in the circuit; connected in series.</td></tr>
+            <tr><td class="ic"><svg id="ohm-eq-3" viewBox="0 0 120 60" aria-hidden="true"></svg></td><td class="ic"><svg id="ohm-sy-3" viewBox="0 0 120 60" aria-hidden="true"></svg></td><td><b>Resistor</b><br>The unknown resistance under test.</td></tr>
+          </tbody>
+        </table></div>
+        <h2 class="sub-h">Steps</h2>
+        <div class="method-wrap">
+          <ol class="steps" id="ohm-steps">
+            <li><button type="button" class="step"><span class="sn">1</span><span>Connect the resistor, power supply, ammeter and voltmeter as in the circuit: ammeter in series, voltmeter across the resistor.</span></button></li>
+            <li><button type="button" class="step"><span class="sn">2</span><span>Switch on the supply so the current is established. Note the ammeter and voltmeter readings; the voltmeter gives the potential difference V across the ends of the resistor.</span></button></li>
+            <li><button type="button" class="step"><span class="sn">3</span><span>Repeat for different currents by changing the supply voltage, recording both meters each time.</span></button></li>
+            <li><button type="button" class="step"><span class="sn">4</span><span>Plot current I against potential difference V. A straight line verifies Ohm's law.</span></button></li>
+            <li><button type="button" class="step"><span class="sn">5</span><span>From the graph, find the slope S between two points far apart on the line.</span></button></li>
+            <li><button type="button" class="step"><span class="sn">6</span><span>Calculate the unknown resistance from R = 1 ÷ S.</span></button></li>
+          </ol>
+          <div class="step-view"><div class="step-fig"><svg id="ohm-step-svg" viewBox="0 0 520 360" aria-hidden="true"></svg></div><p class="step-cap" id="ohm-step-cap" aria-live="polite"></p></div>
+        </div>
+        <div class="tips"><div class="tips-label">Good practice</div><ul>
+          <li>Check every connection and the meter polarity before switching on.</li>
+          <li>Read the needle from directly in front of the scale to avoid parallax.</li>
+          <li>Switch off between readings so the resistor does not warm up and change its resistance.</li>
+          <li>Draw one straight line that passes evenly among the points rather than joining them dot to dot.</li>
+        </ul></div>
+        <div class="tips safety"><div class="tips-label">Care</div><ul>
+          <li>Never connect the ammeter directly across the supply or across the resistor.</li>
+          <li>Keep to the low voltages of the bench supply and keep hands and bench dry.</li>
+        </ul></div>
+        <div class="page-end"><button type="button" class="btn-next" data-next>Next: Observation and calculation →</button></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-ohm-obs" data-title="Observation and calculation" data-lab="Ohm's law">
+      <div class="sheet">
+        <p class="eyebrow">Lab 9 · Observation and calculation</p>
+        <h1 class="page-h">From readings to R</h1>
+        <p class="ex-head"><span class="ex-badge">Example values</span></p>
+        <p class="note" style="margin-top:0;margin-bottom:22px">A worked example for a resistor labelled 100 Ω, chosen to be physically consistent. V is a little below each supply setting because of the supply's internal resistance.</p>
+        <div class="formula-card"><div class="big-eq"><i>R</i> = <span class="frac"><span>1</span><span><i>S</i></span></span>, &nbsp; <i>S</i> = <span class="frac"><span><i>y</i><sub>2</sub> − <i>y</i><sub>1</sub></span><span><i>x</i><sub>2</sub> − <i>x</i><sub>1</sub></span></span></div><p>I (ampere) on the y-axis, V (volt) on the x-axis.</p></div>
+        <h2 class="sub-h">Observation table</h2>
+        <div class="table-wrap"><table class="obs" id="ohm-ex-table">
+          <thead><tr><th>Supply voltage<span class="u">volt</span></th><th><i>V</i><span class="u">volt</span></th><th><i>I</i><span class="u">ampere</span></th><th><i>R</i> = <i>V</i>/<i>I</i><span class="u">ohm</span></th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+        <h2 class="sub-h">Graph</h2>
+        <div class="graph-wrap"><svg id="ohm-ex-graph" viewBox="0 0 760 470" role="img" aria-label="Example I–V graph: five points on a straight line through the origin"></svg></div>
+        <h2 class="sub-h">Calculation</h2>
+        <div class="calc" id="ohm-ex-calc"></div>
+        <h2 class="sub-h">Result</h2>
+        <div class="table-wrap"><table class="res-t" id="ohm-ex-res"></table></div>
+        <h2 class="sub-h">Common slips</h2>
+        <div class="slips">
+          <div class="slip"><h3>Slope upside down</h3><p>With I on the y-axis the slope is ΔI/ΔV ≈ 0.01 A/V. ΔV/ΔI ≈ 100 is already R, so taking 1 ÷ it gives 0.01 Ω.</p></div>
+          <div class="slip"><h3>Milliamperes as amperes</h3><p>19.4 mA is 0.0194 A. Using 19.4 makes R a thousand times too small.</p></div>
+          <div class="slip"><h3>Supply setting instead of V</h3><p>The voltmeter reading, not the dial setting, is the voltage across the resistor.</p></div>
+          <div class="slip"><h3>Points from the table for the slope</h3><p>The slope comes from two points on the best-fit line, far apart, not from two table rows.</p></div>
+        </div>
+        <div class="page-end"><button type="button" class="btn-next" data-next>Next: MCQs →</button></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-ohm-mcq" data-title="MCQs" data-lab="Ohm's law">
+      <div class="sheet">
+        <p class="eyebrow">Lab 9 · MCQs</p>
+        <h1 class="page-h">Check understanding</h1>
+        <div class="mcq-bar"><span class="mcq-score" id="ohm-mcq-score"></span><button type="button" class="btn-quiet sm" id="ohm-mcq-reset">Reset</button></div>
+        <ol class="mcq-list" id="ohm-mcq-list"></ol>
+        <div class="page-end with-extras">
+          <div class="extras"><button type="button" class="extras-toggle" aria-expanded="false" aria-haspopup="true">Optional extras ▴</button>
+            <div class="extras-panel" role="menu">
+              <a role="menuitem" href="https://grokipedia.com/page/Ohm's_law" target="_blank" rel="noopener">Ohm's law<small>Grokipedia</small></a>
+              <a role="menuitem" href="https://grokipedia.com/page/Electrical_resistance_and_conductance" target="_blank" rel="noopener">Electrical resistance and conductance<small>Grokipedia</small></a>
+              <a role="menuitem" href="https://www.youtube.com/watch?v=EfhtyE6kwIM" target="_blank" rel="noopener">To verify Ohm's law by experiment<small>YouTube · video</small></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="tut-bar" id="tut-bar" hidden role="region" aria-label="Tutorial">
+  <div class="tut-main"><div class="tut-title" id="tut-title"></div><div class="tut-text" id="tut-text" aria-live="polite"></div><div class="tut-f" id="tut-f"></div></div>
+  <div class="tut-ctl">
+    <button type="button" class="tut-btn" id="tut-prev" title="Previous step (←)">‹ Previous step</button>
+    <button type="button" class="tut-btn" id="tut-next" title="Next step (→)">Next step ›</button>
+    <button type="button" class="tut-btn tut-pause" id="tut-pause" aria-pressed="false" title="Pause (Space)"><svg class="ti i-pause" viewBox="0 0 14 14" aria-hidden="true"><rect x="2.5" y="2" width="3.2" height="10" rx="1"/><rect x="8.3" y="2" width="3.2" height="10" rx="1"/></svg><svg class="ti i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3.5 1.8v10.4l8.5-5.2z"/></svg><span class="tl">Pause</span></button>
+    <label class="tut-speed">Speed <select id="tut-speed" aria-label="Tutorial speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option></select></label>
+    <button type="button" class="tut-btn stop" id="tut-stop">■ Stop</button>
+  </div>
+</div>
+
+<script src="js/core.js"></script>
+<script src="js/tutor.js"></script>
+<script src="js/mcq.js"></script>
+<script src="js/st.js"></script>
+<script src="js/st-bench.js"></script>
+<script src="js/ohm.js"></script>
+<script src="js/ohm-bench.js"></script>
+<script>SOL.boot();</script>
+</body>
+</html>
