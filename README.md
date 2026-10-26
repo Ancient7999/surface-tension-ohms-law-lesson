@@ -1,6 +1,9 @@
 # Surface tension and Ohm's law
 
+Live site: https://ancient7999.github.io/surface-tension-ohms-law-lesson/
+
 An interactive lesson covering two physics practicals:
+
 
 - **Lab 8: Surface tension by capillary rise.** A capillary tube is rinsed and dipped in a liquid. The height of the column is read through a magnifier on a centimetre scale. Three readings give the average height, and the surface tension follows from γ = h r ρ g / (2 cos θ).
 - **Lab 9: Ohm's law.** A resistor is wired to a DC supply with an ammeter and a voltmeter. Readings are taken from 2 V to 10 V and plotted as an I–V graph. The resistance is found from R = V/I and from the slope, R = 1/S.
