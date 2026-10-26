@@ -1,6 +1,6 @@
 # Surface tension and Ohm's law
 
-Live site: https://ancient7999.github.io/surface-tension-ohms-law-lesson/
+Live site: https://Ancient7999.github.io/surface-tension-ohms-law-lesson/
 
 An interactive lesson covering two physics practicals:
 
